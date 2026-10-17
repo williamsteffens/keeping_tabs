@@ -232,12 +232,37 @@ body {
 
 .palette-footer {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
     gap: 16px;
     padding: 11px 18px;
     border-top: 1px solid var(--border);
     color: var(--muted);
     font-size: 11px;
+}
+
+.support-link {
+    color: var(--muted);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.support-link:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.keyboard-hints {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-left: auto;
+}
+
+.keyboard-hints > span {
+    white-space: nowrap;
 }
 
 kbd {
@@ -555,6 +580,12 @@ select {
 
 input[type=number] {
     width: 86px;
+}
+
+#manager-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
 }
 
 #manager-shortcut {
