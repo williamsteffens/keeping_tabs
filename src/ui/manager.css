@@ -98,8 +98,13 @@ body {
     width: min(760px, 100%);
     margin: 0 auto;
     background: var(--surface);
-    height: 100dvh;
+    height: auto;
+    max-height: 100dvh;
     overflow: hidden;
+}
+
+.manager.expanded {
+    height: 100dvh;
 }
 
 .manager > .scroll-shell {
@@ -678,8 +683,6 @@ dialog p {
 .empty {
     padding: 35px 20px;
     text-align: center;
-    border: 1px dashed var(--border);
-    border-radius: 12px;
     color: var(--muted);
 }
 

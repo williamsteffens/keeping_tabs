@@ -131,6 +131,22 @@ test("overlay waits for its manager and cleans up after closing", async t => {
     });
     assert.equal(frame.style.height, "min(470px, 100%)");
 
+    const size = (height: unknown) => ({ type: "keeping-tabs-size", height });
+    message({}, origin, size(220));
+    message(frame.contentWindow, "https://example.com", size(220));
+    assert.equal(frame.style.height, "min(470px, 100%)");
+    message(frame.contentWindow, origin, size(220.2));
+    assert.equal(frame.style.height, "min(221px, 100%)");
+    message(frame.contentWindow, origin, size(420));
+    assert.equal(frame.style.height, "min(420px, 100%)");
+    for (const height of [0, -1, Infinity, NaN, "220"]) {
+        message(frame.contentWindow, origin, size(height));
+        assert.equal(frame.style.height, "min(420px, 100%)");
+    }
+    message(frame.contentWindow, origin, expanded);
+    message(frame.contentWindow, origin, size(220));
+    assert.equal(frame.style.height, "100%");
+
     message(frame.contentWindow, origin, "keeping-tabs-close");
     assert.equal(dialog.open, false);
     assert.equal(page_document.documentElement.children[0].removed, true);

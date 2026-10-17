@@ -158,6 +158,7 @@ function set_view(view: string) {
         }
     });
     const home = view === "commands";
+    $("#manager").classList.toggle("expanded", !home);
     if (window.parent !== window) {
         window.parent.postMessage({
             type: "keeping-tabs-view", expanded: !home
@@ -431,6 +432,69 @@ for (const selector of [
     setup_scrollbar($(selector));
 }
 
+function setup_manager_size() {
+    const manager = $("#manager");
+    const commands = $("#view-commands");
+    const list = $("#command-list");
+    let scheduled = false;
+    let last_height = 0;
+    let popup_id: number | undefined;
+
+    async function resize() {
+        scheduled = false;
+        const expanded = current_view !== "commands";
+        // Include rows clipped by the current iframe height so filtering
+        // can grow the palette again after it has shrunk.
+        const height = expanded ? 760 : Math.ceil(manager.scrollHeight
+            + Math.max(0, list.scrollHeight - list.clientHeight));
+        if (height <= 0 || height === last_height) return;
+        last_height = height;
+        if (window.parent !== window) {
+            if (!expanded) {
+                window.parent.postMessage({
+                    type: "keeping-tabs-size", height
+                }, "*");
+            }
+        } else if (popup_id != null) {
+            const chrome_height = window.outerHeight - window.innerHeight;
+            try {
+                await browser.windows.update(popup_id, {
+                    height: Math.min(
+                        screen.availHeight, height + chrome_height
+                    )
+                });
+            } catch (error) {
+                console.debug("Could not resize manager window", error);
+            }
+        }
+    }
+
+    function schedule() {
+        if (scheduled) return;
+        scheduled = true;
+        requestAnimationFrame(() => { void resize(); });
+    }
+
+    const observer = new ResizeObserver(schedule);
+    observer.observe(manager);
+    observer.observe(commands);
+    const mutations = new MutationObserver(schedule);
+    mutations.observe(commands, {
+        subtree: true, childList: true, characterData: true
+    });
+    if (window.parent === window) {
+        void browser.windows.getCurrent().then(current => {
+            // The options page can also open in a regular browser tab.
+            if (current.type !== "popup") return;
+            popup_id = current.id;
+            last_height = 0;
+            schedule();
+        }).catch(console.error);
+    }
+    schedule();
+}
+
+setup_manager_size();
 set_view("commands");
 render_commands();
 search.focus();

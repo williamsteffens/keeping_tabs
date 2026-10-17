@@ -79,6 +79,7 @@ export async function toggle_manager_overlay(manager_url: string) {
         }, 10000);
     });
 
+    let expanded = false;
     const on_message = (event: MessageEvent) => {
         if (event.source === frame.contentWindow
             && event.origin === new URL(manager_url).origin) {
@@ -86,8 +87,15 @@ export async function toggle_manager_overlay(manager_url: string) {
             if (event.data === "keeping-tabs-close") dialog.close();
             if (event.data?.type === "keeping-tabs-view"
                 && typeof event.data.expanded === "boolean") {
-                frame.style.height = event.data.expanded
+                expanded = event.data.expanded;
+                frame.style.height = expanded
                     ? "100%" : "min(470px, 100%)";
+            }
+            if (event.data?.type === "keeping-tabs-size" && !expanded
+                && Number.isFinite(event.data.height)
+                && event.data.height > 0) {
+                const height = Math.ceil(event.data.height);
+                frame.style.height = `min(${height}px, 100%)`;
             }
         }
     };
