@@ -12,7 +12,11 @@ export function render_tab_row(
         tab.discarded ? '<span class="tag">Unloaded</span>' : ""
     ].filter(Boolean).join(" ");
     const disabled = kind === "unload" && (tab.active || tab.discarded);
-    const icon = tab.favIconUrl
+    // Browser-internal favicon URLs cannot be loaded by extension pages.
+    const accessible_icon = /^(https?:|data:image\/)/i.test(
+        tab.favIconUrl || ""
+    );
+    const icon = accessible_icon
         ? `<img class="favicon" src="${escape_html(tab.favIconUrl)}" alt="">`
         : '<span class="favicon">🌐</span>';
 

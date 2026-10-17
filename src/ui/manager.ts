@@ -7,6 +7,26 @@ import { render_settings, setup_settings } from "../options/settings.ts";
 import { render_tab_row } from "./components/tab-row.ts";
 import { display_url, escape_html, title_of } from "./utils.ts";
 
+const overlay_error = new URLSearchParams(location.search).get("overlayError");
+if (overlay_error) {
+    const notice = document.createElement("div");
+    notice.className = "notice";
+    notice.setAttribute("role", "alert");
+    notice.textContent = "The page overlay could not open. Firefox reported: "
+        + overlay_error;
+    document.body.prepend(notice);
+}
+
+if (window.parent !== window
+    && new URLSearchParams(location.search).has("embedded")) {
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !event.defaultPrevented
+            && !$<HTMLDialogElement>("#confirm-dialog").open) {
+            window.parent.postMessage("keeping-tabs-close", "*");
+        }
+    });
+}
+
 let all_tabs: ManagedTab[] = [];
 let selected_duplicate_ids = new Set<number>();
 let selected_unload_ids = new Set<number>();
@@ -278,4 +298,9 @@ $<HTMLButtonElement>("#unload-selected").addEventListener("click", async () => {
 });
 
 setup_settings(show_toast);
-refresh();
+void refresh().then(() => {
+    if (window.parent !== window
+        && new URLSearchParams(location.search).has("embedded")) {
+        window.parent.postMessage("keeping-tabs-ready", "*");
+    }
+});

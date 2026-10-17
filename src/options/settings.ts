@@ -4,6 +4,8 @@ import { query_element as $ } from "../ui/utils.ts";
 import { recorded_shortcut } from "./shortcut.ts";
 
 export function render_settings(settings: Settings) {
+    $<HTMLSelectElement>("#manager-display").value =
+        settings.managerDisplay || "window";
     $<HTMLInputElement>("#auto-unload").checked = Boolean(settings.autoUnload);
     $<HTMLInputElement>("#inactivity-minutes").value = String(
         settings.inactivityMinutes || 30
@@ -26,7 +28,10 @@ export function setup_settings(show_toast: (text: string) => void) {
                 action: "saveSettings",
                 settings: {
                     autoUnload: $<HTMLInputElement>("#auto-unload").checked,
-                    inactivityMinutes: minutes
+                    inactivityMinutes: minutes,
+                    managerDisplay:
+                        $<HTMLSelectElement>("#manager-display").value
+                            === "overlay" ? "overlay" : "window"
                 }
             });
             render_settings(result.settings);

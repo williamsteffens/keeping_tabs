@@ -6,7 +6,9 @@
     "permissions": [
         "tabs",
         "alarms",
-        "storage"
+        "storage",
+        "activeTab",
+        "scripting"
     ],
     "background": {
         "scripts": [
@@ -30,6 +32,10 @@
         "page": "ui/manager.html",
         "open_in_tab": true
     },
+    "web_accessible_resources": [{
+        "resources": ["ui/manager.html"],
+        "matches": ["<all_urls>"]
+    }],
     "browser_specific_settings": {
         "gecko": {
             "id": "tab-manager-unload@example.com",

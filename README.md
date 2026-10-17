@@ -3,6 +3,7 @@
 Firefox MV3 extension with:
 
 - A dedicated manager window opened from the toolbar or with `Alt+Shift+K`.
+- An optional page overlay with a blurred background.
 - Best-effort positioning centered over the focused browser window.
 - Duplicate URL groups across windows (fragments ignored; queries retained).
 - Review-and-confirm flow for closing selected duplicate tabs.
@@ -29,6 +30,13 @@ To change it, open **Settings** in the manager, focus **Open manager shortcut**,
 press the desired keys, and click **Save shortcut**. To disable it, click
 **Clear**, then **Save shortcut**. You can also use Firefox's
 **Manage Extension Shortcuts** page.
+
+In **Settings**, choose **Page overlay** under **Open manager as** and save.
+The toolbar button and shortcut will then open the manager above the current
+page, with the background dimmed and blurred. Close it with **Close**, Escape,
+or by clicking outside the manager. Activating the toolbar button or shortcut
+again also closes it. The preference takes effect the next time you open it.
+Pages that Firefox protects from script injection open a separate window.
 
 Load the built extension from `dist/`. `src/manifest.json` is a build input;
 TypeScript source files cannot be loaded directly as an extension.
@@ -79,6 +87,7 @@ watch builds transpile TypeScript; run the type check separately during edits.
 - `src/modules/tabs/`: duplicate detection and tab inactivity tracking.
 - `src/ui/manager.html`, `src/ui/manager.css`, `src/ui/manager.ts`: manager window.
 - `src/ui/components/`, `src/ui/utils.ts`: rendering and DOM helpers.
+- `src/ui/overlay.ts`: top-layer page overlay and background blur.
 - `src/options/settings.ts`: settings view rendering and save handling.
 - `tests/`: duplicate matching, escaping, and message validation checks.
 - `dist/`: generated extension ready to load in Firefox (ignored by Git).

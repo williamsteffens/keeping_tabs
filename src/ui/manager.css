@@ -387,7 +387,8 @@ input[type=checkbox] {
 }
 
 input[type=number],
-input[type=text] {
+input[type=text],
+select {
     padding: 7px;
     border: 1px solid var(--border);
     border-radius: 7px;

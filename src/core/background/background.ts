@@ -1,6 +1,7 @@
 import { is_manager_message } from "../messages.ts";
 import { query_tabs } from "../tabs.ts";
 import { settings } from "../settings.ts";
+import { toggle_manager_overlay } from "../../ui/overlay.ts";
 import {
     discard_tabs,
     last_active,
@@ -45,12 +46,33 @@ async function update_badge() {
     }
 }
 
-browser.action.onClicked.addListener(async () => {
+browser.action.onClicked.addListener(async tab => {
+    const current_settings = await settings();
+    let overlay_error = "";
+    if (current_settings.managerDisplay === "overlay" && tab.id != null) {
+        try {
+            await browser.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: toggle_manager_overlay,
+                args: [browser.runtime.getURL("ui/manager.html?embedded=1")]
+            });
+            return;
+        } catch (error) {
+            overlay_error = error instanceof Error
+                ? error.message : String(error);
+            console.warn("Page overlay unavailable; opening a window", error);
+        }
+    }
+
     const current = await browser.windows.getLastFocused();
     const width = 980;
     const height = 760;
+    const manager_url = new URL(browser.runtime.getURL("ui/manager.html"));
+    if (overlay_error) {
+        manager_url.searchParams.set("overlayError", overlay_error);
+    }
     const create_data: Parameters<typeof browser.windows.create>[0] = {
-        url: browser.runtime.getURL("ui/manager.html"),
+        url: manager_url.href,
         type: "popup",
         width,
         height,
@@ -167,6 +189,8 @@ browser.runtime.onMessage.addListener(async (message: unknown) => {
 
     if (message.action === "saveSettings") {
         const next = {
+            managerDisplay: message.settings.managerDisplay === "overlay"
+                ? "overlay" as const : "window" as const,
             autoUnload: Boolean(message.settings?.autoUnload),
             inactivityMinutes: Math.max(
                 1,

@@ -6,6 +6,7 @@ import {
     duplicate_groups, safe_default
 } from "../src/modules/tabs/duplicates.ts";
 import { escape_html } from "../src/ui/utils.ts";
+import { render_tab_row } from "../src/ui/components/tab-row.ts";
 
 function tab(id: number, overrides: Partial<ManagedTab> = {}): ManagedTab {
     return {
@@ -20,6 +21,19 @@ function tab(id: number, overrides: Partial<ManagedTab> = {}): ManagedTab {
         ...overrides
     };
 }
+
+test("tab rows avoid inaccessible browser-internal favicons", () => {
+    const row = render_tab_row(tab(1, {
+        favIconUrl: "chrome://mozapps/skin/extensions/extension.svg"
+    }), "duplicate", false);
+    assert.doesNotMatch(row, /chrome:\/\//);
+    assert.doesNotMatch(row, /<img/);
+    const web_icon = render_tab_row(tab(1, {
+        favIconUrl: "https://example.com/icon.png"
+    }), "duplicate", false);
+    assert.match(web_icon, /<img/);
+    assert.match(web_icon, /https:\/\/example.com\/icon.png/);
+});
 
 test("matching ignores fragments and retains query parameters", () => {
     const groups = duplicate_groups([
@@ -67,4 +81,21 @@ test("message validation rejects malformed actions and tab IDs", () => {
         action: "saveSettings",
         settings: { autoUnload: true, inactivityMinutes: 30 }
     }), true);
+});
+
+test("manager display accepts window and overlay while keeping old settings", () => {
+    const settings = { autoUnload: true, inactivityMinutes: 30 };
+    for (const managerDisplay of ["window", "overlay"]) {
+        assert.equal(is_manager_message({
+            action: "saveSettings",
+            settings: { ...settings, managerDisplay }
+        }), true);
+    }
+    assert.equal(is_manager_message({
+        action: "saveSettings", settings
+    }), true);
+    assert.equal(is_manager_message({
+        action: "saveSettings",
+        settings: { ...settings, managerDisplay: "invalid" }
+    }), false);
 });
