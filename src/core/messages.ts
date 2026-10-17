@@ -1,6 +1,10 @@
 import type { ManagedTab, Settings } from "./types.ts";
 
 interface MessageMap {
+    activateTab: {
+        request: { action: "activateTab"; tabId: number };
+        response: { activated: boolean };
+    };
     getState: {
         request: { action: "getState" };
         response: { tabs: ManagedTab[]; settings: Settings };
@@ -35,6 +39,9 @@ export function is_manager_message(value: unknown): value is ManagerMessage {
         case "getState":
         case "unloadAll":
             return true;
+        case "activateTab":
+            return "tabId" in value && Number.isInteger(value.tabId)
+                && Number(value.tabId) >= 0;
         case "unloadSelected":
         case "closeSelected":
             return "tabIds" in value && Array.isArray(value.tabIds)

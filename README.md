@@ -2,6 +2,7 @@
 
 Firefox MV3 extension with:
 
+- An Alt+K tab picker with title/URL search, activity badges, and window filters.
 - A searchable command palette opened from the toolbar or with `Alt+Shift+K`.
 - An optional page overlay with a blurred background.
 - Best-effort positioning centered over the focused browser window.
@@ -24,6 +25,17 @@ npm run build
 2. Click **Load Temporary Add-on…** and select `dist/manifest.json`.
 3. Click the extension's toolbar button to open the manager.
 4. Click the **Settings** gear in the manager to configure automatic unloading.
+
+Press **Alt+K** (**Option+K** on macOS) to search all open tabs. Use arrow
+keys and Enter to switch to a tab, including tabs in another window. Filter
+by Active, Inactive, or Unloaded, choose a window, and toggle **Group by window**.
+“Active” means the selected tab in each Firefox window. Tabs are listed by
+recent access when grouping is off. Selecting a tab closes the picker.
+The picker follows the manager’s window/overlay setting and is also available
+through **Search open tabs** or the **Tabs** button. Check or change Alt+K
+under **Settings → Tab picker shortcut**, or in Firefox’s
+**Manage Extension Shortcuts** page. Firefox may leave a shortcut unassigned
+when another extension or browser shortcut conflicts.
 
 The manager shortcut is `Alt+Shift+K` (`Option+Shift+K` on macOS).
 To change it, click the **Settings** gear in the manager, focus **Open manager shortcut**,

@@ -1,3 +1,4 @@
+import { setup_tab_picker } from "./tab-picker.ts";
 import { can_unload, is_about_tab } from "../modules/tabs/unload.ts";
 import { setup_scrollbar } from "./components/scrollbar.ts";
 import { matching_commands } from "./commands.ts";
@@ -23,13 +24,23 @@ if (overlay_error) {
 
 let all_tabs: ManagedTab[] = [];
 let current_view = "commands";
+const initial_mode = new URLSearchParams(location.search).get("mode");
+let palette_mode = initial_mode === "tabs" ? "tabs" : "commands";
+const source_param = new URLSearchParams(location.search).get("sourceWindow");
+const source_window = source_param != null && /^\d+$/.test(source_param)
+    ? Number(source_param) : undefined;
 let active_command = 0;
 let command_busy = false;
 let tabs_ready = false;
 const search = $<HTMLInputElement>("#command-search");
 window.addEventListener("message", event => {
-    if (window.parent !== window && event.source === window.parent
-        && event.data === "keeping-tabs-focus-search"
+    if (window.parent === window || event.source !== window.parent) return;
+    if (event.data?.type === "keeping-tabs-mode"
+        && ["tabs", "commands"].includes(event.data.mode)) {
+        if ($<HTMLDialogElement>("#confirm-dialog").open) return;
+        set_palette_mode(event.data.mode);
+    }
+    if (event.data === "keeping-tabs-focus-search"
         && current_view === "commands"
         && !$<HTMLDialogElement>("#confirm-dialog").open) {
         search.focus({ preventScroll: true });
@@ -48,6 +59,38 @@ function show_toast(text: string) {
     toast_timer = setTimeout(() => {
         element.classList.remove("show");
     }, 2600);
+}
+
+function close_manager() {
+    if (window.parent !== window) {
+        window.parent.postMessage("keeping-tabs-close", "*");
+    } else {
+        window.close();
+    }
+}
+
+let manager_tab_id: number | undefined;
+const tab_picker = setup_tab_picker(
+    () => all_tabs.filter(tab => tab.id !== manager_tab_id),
+    source_window, close_manager, show_toast
+);
+// A separate manager window is itself a tab; keep it out of its own picker.
+void browser.tabs?.getCurrent?.().then(tab => {
+    manager_tab_id = tab?.id;
+    if (palette_mode === "tabs") render_commands();
+}).catch(console.error);
+
+function set_palette_mode(mode: string) {
+    palette_mode = mode;
+    if (window.parent !== window) {
+        window.parent.postMessage({
+            type: "keeping-tabs-palette", mode
+        }, "*");
+    }
+    active_command = 0;
+    search.value = "";
+    set_view("commands");
+    render_commands();
 }
 
 function preferred_tab(tabs: ManagedTab[]) {
@@ -173,7 +216,8 @@ function set_view(view: string) {
         }, "*");
     }
     $("#back").classList.toggle("hidden", home);
-    $("#manager-title").textContent = home ? "Keeping Tabs"
+    $("#manager-title").textContent = home
+        ? (palette_mode === "tabs" ? "Open tabs" : "Keeping Tabs")
         : "Keeping Tabs / " + (view === "duplicates" ? "Duplicate tabs"
             : view === "unload" ? "Unload tabs" : "Settings");
     if (home) {
@@ -187,6 +231,26 @@ function set_view(view: string) {
 }
 
 function render_commands() {
+    const picking = palette_mode === "tabs";
+    $("#manager").classList.toggle("tab-picker-mode", picking);
+    $("#picker-filters").classList.toggle("hidden", !picking);
+    $("#toggle-picker").textContent = picking ? "Commands" : "Tabs";
+    $("#toggle-picker").title = picking ? "Open commands"
+        : "Search open tabs (Alt+K)";
+    $("#command-prompt").textContent = picking ? "⌕" : ">";
+    search.placeholder = picking ? "Search tabs by title or URL…"
+        : "Type a command…";
+    search.setAttribute("aria-label", picking ? "Search open tabs"
+        : "Search commands");
+    $("#command-list").setAttribute("aria-label", picking ? "Open tabs"
+        : "Commands");
+    $("#enter-hint").textContent = picking ? "to switch" : "to run";
+    if (picking) {
+        tab_picker.render();
+        return;
+    }
+    $("#command-empty").textContent =
+        "No matching commands. Try “unload” or “tabs”.";
     const commands = matching_commands(search.value);
     active_command = Math.max(0, Math.min(
         active_command, commands.length - 1
@@ -228,6 +292,10 @@ async function run_command(id: CommandId) {
         && id !== "refresh" && id !== "settings")) {
         return;
     }
+    if (id === "tabs") {
+        set_palette_mode("tabs");
+        return;
+    }
     if (id === "duplicates" || id === "unload" || id === "settings") {
         set_view(id);
         return;
@@ -258,13 +326,27 @@ async function run_command(id: CommandId) {
     }
 }
 
+$("#toggle-picker").addEventListener("click", () => {
+    set_palette_mode(palette_mode === "tabs" ? "commands" : "tabs");
+});
 $("#open-settings").addEventListener("click", () => set_view("settings"));
 $("#back").addEventListener("click", () => set_view("commands"));
 search.addEventListener("input", () => {
     active_command = 0;
-    render_commands();
+    if (palette_mode === "tabs") tab_picker.render(true);
+    else render_commands();
 });
 search.addEventListener("keydown", event => {
+    if (palette_mode === "tabs") {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            tab_picker.move(event.key === "ArrowDown" ? 1 : -1);
+        } else if (event.key === "Enter") {
+            event.preventDefault();
+            void tab_picker.activate();
+        }
+        return;
+    }
     const commands = matching_commands(search.value);
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         event.preventDefault();
@@ -283,6 +365,11 @@ search.addEventListener("keydown", event => {
 });
 $("#command-list").addEventListener("click", event => {
     if (!(event.target instanceof Element)) return;
+    if (palette_mode === "tabs") {
+        const row = event.target.closest<HTMLElement>("[data-tab-id]");
+        if (row) void tab_picker.activate(Number(row.dataset.tabId));
+        return;
+    }
     const row = event.target.closest<HTMLElement>("[data-command]");
     const commands = matching_commands(search.value);
     const index = commands.findIndex(item => item.id === row?.dataset.command);
@@ -302,10 +389,8 @@ document.addEventListener("keydown", event => {
         active_command = 0;
         render_commands();
         search.focus();
-    } else if (window.parent !== window) {
-        window.parent.postMessage("keeping-tabs-close", "*");
     } else {
-        window.close();
+        close_manager();
     }
 });
 
@@ -500,6 +585,24 @@ function setup_manager_size() {
         }).catch(console.error);
     }
     schedule();
+}
+
+let picker_refresh_timer: ReturnType<typeof setTimeout> | undefined;
+function update_picker_tabs() {
+    if (palette_mode !== "tabs" || current_view !== "commands") return;
+    clearTimeout(picker_refresh_timer);
+    picker_refresh_timer = setTimeout(() => {
+        if (palette_mode === "tabs" && current_view === "commands") {
+            void refresh();
+        }
+    }, 120);
+}
+for (const event of [
+    browser.tabs?.onCreated, browser.tabs?.onRemoved, browser.tabs?.onUpdated,
+    browser.tabs?.onActivated, browser.tabs?.onMoved, browser.tabs?.onAttached,
+    browser.tabs?.onDetached
+]) {
+    event?.addListener(update_picker_tabs);
 }
 
 setup_manager_size();

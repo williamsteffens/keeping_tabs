@@ -21,7 +21,13 @@
         "default_area": "tabstrip"
     },
     "commands": {
-        "_execute_action": {
+        "open-tabs": {
+            "suggested_key": {
+                "default": "Alt+K"
+            },
+            "description": "Search open tabs"
+        },
+        "command-palette": {
             "suggested_key": {
                 "default": "Alt+Shift+K"
             },

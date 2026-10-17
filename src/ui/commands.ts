@@ -1,5 +1,13 @@
 export const COMMANDS = [
     {
+        id: "tabs",
+        title: "Search open tabs",
+        description: "Switch tabs, filter by activity, or group by window",
+        keywords: "find navigate active inactive windows picker",
+        icon: "⌕",
+        detail: "Alt+K"
+    },
+    {
         id: "duplicates",
         title: "Review duplicate tabs",
         description: "Choose which copies to close across your windows",

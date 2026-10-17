@@ -1,14 +1,25 @@
 // This function is serialized into the active tab; keep it self-contained.
 export async function toggle_manager_overlay(manager_url: string) {
+    const requested_mode = new URL(manager_url).searchParams.get("mode")
+        === "tabs" ? "tabs" : "commands";
     const host_id = "keeping-tabs-manager-overlay";
     const existing = document.getElementById(host_id);
     if (existing) {
-        existing.shadowRoot?.querySelector("dialog")?.close();
+        if (existing.dataset.mode !== requested_mode) {
+            existing.dataset.mode = requested_mode;
+            existing.shadowRoot?.querySelector("iframe")?.contentWindow
+                ?.postMessage({
+                    type: "keeping-tabs-mode", mode: requested_mode
+                }, new URL(manager_url).origin);
+        } else {
+            existing.shadowRoot?.querySelector("dialog")?.close();
+        }
         return;
     }
 
     const host = document.createElement("div");
     host.id = host_id;
+    host.dataset.mode = requested_mode;
     const shadow = host.attachShadow({ mode: "open" });
     const style = document.createElement("style");
     style.textContent = `
@@ -40,8 +51,8 @@ export async function toggle_manager_overlay(manager_url: string) {
             height: min(470px, 100%);
             border: 0;
             border-radius: 8px;
-            background: #121821;
-            box-shadow: 0 24px 80px rgb(0 0 0 / 45%);
+            background: transparent;
+            box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
         }
 
         button {
@@ -85,6 +96,10 @@ export async function toggle_manager_overlay(manager_url: string) {
             && event.origin === new URL(manager_url).origin) {
             if (event.data === "keeping-tabs-ready") mark_ready();
             if (event.data === "keeping-tabs-close") dialog.close();
+            if (event.data?.type === "keeping-tabs-palette"
+                && ["commands", "tabs"].includes(event.data.mode)) {
+                host.dataset.mode = event.data.mode;
+            }
             if (event.data?.type === "keeping-tabs-view"
                 && typeof event.data.expanded === "boolean") {
                 expanded = event.data.expanded;

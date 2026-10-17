@@ -29,7 +29,7 @@ test("commands can be found by the task they perform", () => {
 });
 
 test("empty searches show all commands and unknown searches show none", () => {
-    assert.equal(matching_commands(" ").length, 5);
-    assert.equal(matching_commands(">").length, 5);
+    assert.equal(matching_commands(" ").length, 6);
+    assert.equal(matching_commands(">").length, 6);
     assert.deepEqual(matching_commands("no such command"), []);
 });

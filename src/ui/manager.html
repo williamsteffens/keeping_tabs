@@ -18,6 +18,8 @@
             <span id="tab-summary" class="muted" role="status">
                 Loading tabs…
             </span>
+            <button id="toggle-picker" class="button quiet" type="button"
+                title="Search open tabs (Alt+K)">Tabs</button>
             <button id="open-settings" class="button quiet icon-button"
                 type="button" aria-label="Settings" title="Settings"
                 aria-controls="view-settings">
@@ -35,13 +37,42 @@
         </header>
         <section id="view-commands" class="view">
             <div class="command-input-wrap">
-                <span class="command-prompt" aria-hidden="true">&gt;</span>
+                <span id="command-prompt" class="command-prompt"
+                    aria-hidden="true">&gt;</span>
                 <input id="command-search" type="text" role="combobox"
                     aria-label="Search commands" aria-autocomplete="list"
                     aria-expanded="true" aria-controls="command-list"
                     aria-describedby="command-help" autocomplete="off"
                     spellcheck="false" placeholder="Type a command…"
                     autofocus>
+            </div>
+            <div id="picker-filters" class="picker-filters hidden">
+                <div id="picker-status" class="picker-status"
+                    role="group" aria-label="Filter tabs by activity">
+                    <button type="button" data-tab-status="all"
+                        aria-pressed="true">All <span class="status-count">
+                        0</span></button>
+                    <button type="button" data-tab-status="active"
+                        aria-pressed="false">Active <span class="status-count">
+                        0</span></button>
+                    <button type="button" data-tab-status="inactive"
+                        aria-pressed="false">Inactive
+                        <span class="status-count">
+                        0</span></button>
+                    <button type="button" data-tab-status="unloaded"
+                        aria-pressed="false">Unloaded
+                        <span class="status-count">
+                        0</span></button>
+                </div>
+                <div class="picker-window-filters">
+                    <select id="picker-window" aria-label="Filter by window">
+                        <option value="all">All windows</option>
+                    </select>
+                    <label class="check-label">
+                        <input id="picker-grouped" type="checkbox" checked>
+                        Group by window
+                    </label>
+                </div>
             </div>
             <div id="command-list" role="listbox"
                 aria-label="Commands"></div>
@@ -66,7 +97,8 @@
                 </a>
                 <div class="keyboard-hints">
                     <span><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span>
-                    <span><kbd>Enter</kbd> to run</span>
+                    <span><kbd>Enter</kbd>
+                        <span id="enter-hint">to run</span></span>
                     <span><kbd>Esc</kbd> to close</span>
                 </div>
             </footer>
@@ -228,6 +260,40 @@
                 <span id="shortcut-status" class="muted" role="status">
                 </span>
             </form>
+            <form id="picker-shortcut-form" class="panel settings-panel">
+                <label class="setting-row" for="picker-shortcut">
+                    <span>
+                        <strong>Tab picker shortcut</strong>
+                        <small id="picker-shortcut-help">
+                            Focus the field and press your shortcut keys.
+                            Click Clear to disable, then Save shortcut.
+                        </small>
+                    </span>
+                    <input 
+                        id="picker-shortcut"
+                        type="text"
+                        aria-describedby="picker-shortcut-help"
+                        autocomplete="off"
+                        spellcheck="false"
+                        placeholder="Press shortcut keys"
+                        readonly disabled>
+                </label>
+                <button id="picker-clear-shortcut" type="button"
+                    class="button secondary" disabled>
+                    Clear
+                </button>
+                <button id="picker-save-shortcut" type="submit"
+                    class="button primary" disabled>
+                    Save shortcut
+                </button>
+                <span id="picker-shortcut-status" class="muted" role="status">
+                </span>
+            </form>
+            <div class="notice">
+                <strong>Tab picker:</strong> Alt+K opens search for all tabs.
+                Set the binding above, or use Firefox’s
+                Manage Extension Shortcuts page if another binding conflicts.
+            </div>
             <div class="notice">
                 <strong>Privacy:</strong>
                 tab titles and URLs are read locally by the extension to

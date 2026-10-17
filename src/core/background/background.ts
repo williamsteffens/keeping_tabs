@@ -4,7 +4,6 @@ import { settings } from "../settings.ts";
 import { toggle_manager_overlay } from "../../ui/overlay.ts";
 import {
     discard_tabs,
-    is_about_tab,
     last_active,
     unload_inactive
 } from "../../modules/tabs/unload.ts";
@@ -50,15 +49,28 @@ async function update_badge() {
     }
 }
 
-browser.action.onClicked.addListener(async tab => {
+async function open_manager(
+    source_tab: browser.tabs.Tab | undefined, mode = "commands"
+) {
+    // Firefox before 126 supplies only the command name to onCommand.
+    const tab = source_tab || (await browser.tabs.query({
+        active: true, currentWindow: true
+    }))[0];
     const current_settings = await settings();
+    const manager_url = new URL(browser.runtime.getURL("ui/manager.html"));
+    manager_url.searchParams.set("mode", mode);
+    if (tab?.windowId != null) {
+        manager_url.searchParams.set("sourceWindow", String(tab.windowId));
+    }
     let overlay_error = "";
-    if (current_settings.managerDisplay === "overlay" && tab.id != null) {
+    if (current_settings.managerDisplay === "overlay" && tab?.id != null) {
         try {
+            const overlay_url = new URL(manager_url);
+            overlay_url.searchParams.set("embedded", "1");
             await browser.scripting.executeScript({
                 target: { tabId: tab.id },
                 func: toggle_manager_overlay,
-                args: [browser.runtime.getURL("ui/manager.html?embedded=1")]
+                args: [overlay_url.href]
             });
             return;
         } catch (error) {
@@ -71,7 +83,6 @@ browser.action.onClicked.addListener(async tab => {
     const current = await browser.windows.getLastFocused();
     const width = 780;
     const height = 560;
-    const manager_url = new URL(browser.runtime.getURL("ui/manager.html"));
     if (overlay_error) {
         manager_url.searchParams.set("overlayError", overlay_error);
     }
@@ -108,6 +119,16 @@ browser.action.onClicked.addListener(async tab => {
         delete create_data.left;
         delete create_data.top;
         await browser.windows.create(create_data);
+    }
+}
+
+browser.action.onClicked.addListener(tab => {
+    void open_manager(tab).catch(console.error);
+});
+browser.commands.onCommand.addListener((command, tab) => {
+    if (command === "open-tabs" || command === "command-palette") {
+        const mode = command === "open-tabs" ? "tabs" : "commands";
+        void open_manager(tab, mode).catch(console.error);
     }
 });
 
@@ -180,6 +201,14 @@ browser.runtime.onMessage.addListener(async (message: unknown) => {
         }
         await update_badge();
         return { closed: safe_ids.length };
+    }
+
+    if (message.action === "activateTab") {
+        const tab = await browser.tabs.get(message.tabId);
+        if (tab.windowId == null) throw new Error("Tab window is unavailable");
+        await browser.tabs.update(message.tabId, { active: true });
+        await browser.windows.update(tab.windowId, { focused: true });
+        return { activated: true };
     }
 
     if (message.action === "getState") {

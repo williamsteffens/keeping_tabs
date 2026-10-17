@@ -17,6 +17,8 @@ test("overlay waits for its manager and cleans up after closing", async t => {
 
     class ElementStub extends EventTarget {
         tag: string;
+        id = "";
+        dataset: Record<string, string> = {};
         children: ElementStub[] = [];
         shadowRoot: ElementStub | null = null;
         messages: { data: unknown; origin: string; visible: boolean }[] = [];
@@ -48,6 +50,14 @@ test("overlay waits for its manager and cleans up after closing", async t => {
         append(...children: ElementStub[]) {
             this.children.push(...children);
         }
+        querySelector(tag: string): ElementStub | null {
+            for (const child of this.children) {
+                if (child.tag === tag) return child;
+                const nested = child.querySelector(tag);
+                if (nested) return nested;
+            }
+            return null;
+        }
         setAttribute() {}
         attachShadow() {
             this.shadowRoot = new ElementStub("shadow");
@@ -69,7 +79,9 @@ test("overlay waits for its manager and cleans up after closing", async t => {
     const previous_focus = new ElementStub("input");
     const page_document = {
         activeElement: previous_focus,
-        getElementById: () => null,
+        getElementById: (id: string) => created.find(item =>
+            item.id === id && !item.removed
+        ),
         createElement: (tag: string) => {
             const element = new ElementStub(tag);
             created.push(element);
@@ -219,4 +231,16 @@ test("overlay waits for its manager and cleans up after closing", async t => {
     page_window.dispatchEvent(new KeyboardStub("Escape"));
     assert.equal(escaped.open, false);
     assert.equal(styles.has("overflow"), false);
+
+    const switching = await reopen();
+    const picker_url = "moz-extension://test/ui/manager.html?mode=tabs";
+    await injected(picker_url);
+    assert.equal(switching.open, true);
+    const picker_frame = created.filter(item => item.tag === "iframe").at(-1)!;
+    assert.deepEqual(picker_frame.messages.at(-1)?.data, {
+        type: "keeping-tabs-mode", mode: "tabs"
+    });
+    // Repeating the shortcut for the same palette closes the overlay.
+    await injected(picker_url);
+    assert.equal(switching.open, false);
 });

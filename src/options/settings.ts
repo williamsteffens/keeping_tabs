@@ -13,7 +13,8 @@ export function render_settings(settings: Settings) {
 }
 
 export function setup_settings(show_toast: (text: string) => void) {
-    setup_shortcut();
+    setup_shortcut("command-palette", "manager", "Alt+Shift+K");
+    setup_shortcut("open-tabs", "picker", "Alt+K");
 
     $("#save-settings").addEventListener("click", async () => {
         const input = $<HTMLInputElement>("#inactivity-minutes");
@@ -46,11 +47,14 @@ export function setup_settings(show_toast: (text: string) => void) {
     });
 }
 
-function setup_shortcut() {
-    const input = $<HTMLInputElement>("#manager-shortcut");
-    const button = $<HTMLButtonElement>("#save-shortcut");
-    const status = $("#shortcut-status");
-    const clear = $<HTMLButtonElement>("#clear-shortcut");
+function setup_shortcut(
+    command_name: string, field: string, default_shortcut: string
+) {
+    const prefix = field === "manager" ? "" : `${field}-`;
+    const input = $<HTMLInputElement>(`#${field}-shortcut`);
+    const button = $<HTMLButtonElement>(`#${prefix}save-shortcut`);
+    const status = $(`#${prefix}shortcut-status`);
+    const clear = $<HTMLButtonElement>(`#${prefix}clear-shortcut`);
     let is_mac = false;
 
     input.addEventListener("keydown", event => {
@@ -87,7 +91,7 @@ function setup_shortcut() {
             ]);
             is_mac = platform.os === "mac";
             const command = commands.find(item =>
-                item.name === "_execute_action"
+                item.name === command_name
             );
             if (!command) {
                 throw new Error("Manager shortcut is unavailable.");
@@ -97,26 +101,27 @@ function setup_shortcut() {
             button.disabled = false;
             clear.disabled = false;
         } catch {
-            status.textContent = "Could not load the shortcut. Reopen Settings.";
+            status.textContent = "Could not load this shortcut. "
+                + "Check Firefox’s Manage Extension Shortcuts page.";
         }
     }
 
-    $("#shortcut-form").addEventListener("submit", async event => {
+    $(`#${prefix}shortcut-form`).addEventListener("submit", async event => {
         event.preventDefault();
         button.disabled = true;
         status.textContent = "";
 
         try {
             await browser.commands.update({
-                name: "_execute_action",
+                name: command_name,
                 shortcut: input.value.trim()
             });
             await load_shortcut();
             status.textContent = input.value
                 ? "Shortcut saved." : "Shortcut disabled.";
         } catch {
-            status.textContent = "Could not set shortcut. Try Alt+Shift+K "
-                + "or another valid combination.";
+            status.textContent = "Could not set shortcut. Try "
+                + default_shortcut + " or another valid combination.";
         } finally {
             button.disabled = false;
         }
