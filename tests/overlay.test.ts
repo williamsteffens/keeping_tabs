@@ -19,7 +19,14 @@ test("overlay waits for its manager and cleans up after closing", async t => {
         tag: string;
         children: ElementStub[] = [];
         shadowRoot: ElementStub | null = null;
-        contentWindow = {};
+        messages: { data: unknown; origin: string; visible: boolean }[] = [];
+        contentWindow = {
+            postMessage: (data: unknown, origin: string) => {
+                const modal = created.filter(item => item.tag === "dialog")
+                    .at(-1);
+                this.messages.push({ data, origin, visible: !!modal?.open });
+            }
+        };
         open = false;
         removed = false;
         focused = false;
@@ -89,6 +96,7 @@ test("overlay waits for its manager and cleans up after closing", async t => {
     const frame = created.find(element => element.tag === "iframe")!;
     assert.equal(dialog.open, false);
     assert.equal(frame.focused, false);
+    assert.deepEqual(frame.messages, []);
 
     function message(source: object, origin: string, data: unknown) {
         const event = new Event("message");
@@ -106,6 +114,9 @@ test("overlay waits for its manager and cleans up after closing", async t => {
     await opening;
     assert.equal(dialog.open, true);
     assert.equal(frame.focused, true);
+    assert.deepEqual(frame.messages, [{
+        data: "keeping-tabs-focus-search", origin, visible: true
+    }]);
     assert.deepEqual(styles.get("overflow"), ["hidden", "important"]);
 
     let received = 0;

@@ -185,6 +185,10 @@ export async function toggle_manager_overlay(manager_url: string) {
         // Modal dialogs enter the top layer, above high-z-index page UI.
         dialog.showModal();
         frame.focus();
+        // The command field cannot receive focus while the frame is hidden.
+        frame.contentWindow?.postMessage(
+            "keeping-tabs-focus-search", new URL(manager_url).origin
+        );
     } catch (error) {
         cleanup();
         throw error;

@@ -27,6 +27,14 @@ let active_command = 0;
 let command_busy = false;
 let tabs_ready = false;
 const search = $<HTMLInputElement>("#command-search");
+window.addEventListener("message", event => {
+    if (window.parent !== window && event.source === window.parent
+        && event.data === "keeping-tabs-focus-search"
+        && current_view === "commands"
+        && !$<HTMLDialogElement>("#confirm-dialog").open) {
+        search.focus({ preventScroll: true });
+    }
+});
 let selected_duplicate_ids = new Set<number>();
 let selected_unload_ids = new Set<number>();
 let pending_close_ids: number[] = [];
