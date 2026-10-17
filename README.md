@@ -2,7 +2,7 @@
 
 Firefox MV3 extension with:
 
-- A dedicated manager window opened from the toolbar.
+- A dedicated manager window opened from the toolbar or with `Alt+Shift+K`.
 - Best-effort positioning centered over the focused browser window.
 - Duplicate URL groups across windows (fragments ignored; queries retained).
 - Review-and-confirm flow for closing selected duplicate tabs.
@@ -23,6 +23,12 @@ npm run build
 2. Click **Load Temporary Add-on…** and select `dist/manifest.json`.
 3. Click the extension's toolbar button to open the manager.
 4. Open **Settings** inside the manager to configure automatic unloading.
+
+The manager shortcut is `Alt+Shift+K` (`Option+Shift+K` on macOS).
+To change it, open **Settings** in the manager, focus **Open manager shortcut**,
+press the desired keys, and click **Save shortcut**. To disable it, click
+**Clear**, then **Save shortcut**. You can also use Firefox's
+**Manage Extension Shortcuts** page.
 
 Load the built extension from `dist/`. `src/manifest.json` is a build input;
 TypeScript source files cannot be loaded directly as an extension.

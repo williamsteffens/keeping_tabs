@@ -18,6 +18,14 @@
         "default_title": "Open Tab Manager",
         "default_area": "tabstrip"
     },
+    "commands": {
+        "_execute_action": {
+            "suggested_key": {
+                "default": "Alt+Shift+K"
+            },
+            "description": "Open Tab Manager"
+        }
+    },
     "options_ui": {
         "page": "ui/manager.html",
         "open_in_tab": true

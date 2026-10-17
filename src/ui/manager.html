@@ -120,7 +120,7 @@
             <div class="section-heading">
                 <div>
                     <h2>Settings</h2>
-                    <p>Configure automatic memory-saving behavior.</p>
+                    <p>Configure automatic unloading and keyboard shortcuts.</p>
                 </div>
             </div>
             <div class="panel settings-panel">
@@ -153,6 +153,35 @@
                 <span id="settings-status" class="muted" role="status">
                 </span>
             </div>
+            <form id="shortcut-form" class="panel settings-panel">
+                <label class="setting-row" for="manager-shortcut">
+                    <span>
+                        <strong>Open manager shortcut</strong>
+                        <small id="shortcut-help">
+                            Focus the field and press your shortcut keys.
+                            Click Clear to disable, then Save shortcut.
+                        </small>
+                    </span>
+                    <input 
+                        id="manager-shortcut"
+                        type="text"
+                        aria-describedby="shortcut-help"
+                        autocomplete="off"
+                        spellcheck="false"
+                        placeholder="Press shortcut keys"
+                        readonly disabled>
+                </label>
+                <button id="clear-shortcut" type="button"
+                    class="button secondary" disabled>
+                    Clear
+                </button>
+                <button id="save-shortcut" type="submit"
+                    class="button primary" disabled>
+                    Save shortcut
+                </button>
+                <span id="shortcut-status" class="muted" role="status">
+                </span>
+            </form>
             <div class="notice">
                 <strong>Privacy:</strong>
                 tab titles and URLs are read locally by the extension to
