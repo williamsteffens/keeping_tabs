@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tab Manager</title>
+    <link rel="stylesheet" href="manager.css">
+    <script type="module" src="manager.ts"></script>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-icon">T</div>
+            <div>
+                <h1>Tab Manager</h1>
+                <p>Keep your browser tidy</p>
+            </div>
+        </div>
+        <button id="refresh" class="button quiet">↻ Refresh</button>
+    </header>
+    <nav class="tabs" aria-label="Manager sections">
+        <button class="nav-tab active" data-view="duplicates">
+            Duplicate tabs
+            <span id="duplicate-count" class="pill">—</span>
+        </button>
+        <button class="nav-tab" data-view="unload">Unload tabs</button>
+        <button class="nav-tab" data-view="settings">Settings</button>
+    </nav>
+    <main>
+        <section id="view-duplicates" class="view">
+            <div class="section-heading">
+                <div>
+                    <h2>Duplicate tabs</h2>
+                    <p>
+                        Matching URLs are grouped across all open windows.
+                        URL fragments (#…) are ignored; query parameters are
+                        kept.
+                    </p>
+                </div>
+                <button id="scan" class="button secondary">
+                    Scan again
+                </button>
+            </div>
+            <div id="duplicate-summary" class="summary"></div>
+            <div class="toolbar">
+                <label class="check-label">
+                    <input id="select-removable" type="checkbox">
+                    Select safe-to-close copies
+                </label>
+                <span class="muted" id="selected-count">0 selected</span>
+            </div>
+            <div id="duplicate-list" class="group-list"></div>
+            <div class="bottom-actions">
+                <span id="close-note" class="muted">
+                    Active and pinned tabs are not selected by default.
+                </span>
+                <button id="review-close" class="button primary" disabled>
+                    Review &amp; close…
+                </button>
+            </div>
+        </section>
+        <section id="view-unload" class="view hidden">
+            <div class="section-heading">
+                <div>
+                    <h2>Unload tabs</h2>
+                    <p>
+                        Discard tabs to reduce memory use. They stay in the
+                        tab strip and reload when opened.
+                    </p>
+                </div>
+            </div>
+            <div class="metric-grid">
+                <div class="metric">
+                    <span>Loaded tabs</span>
+                    <strong id="loaded-count">—</strong>
+                </div>
+                <div class="metric">
+                    <span>Unloaded tabs</span>
+                    <strong id="unloaded-count">—</strong>
+                </div>
+                <div class="metric">
+                    <span>Windows</span>
+                    <strong id="window-count">—</strong>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Unload all inactive tabs</h3>
+                <p>
+                    Leaves the active tab in each window untouched. Firefox
+                    may refuse to discard some pages.
+                </p>
+                <button id="unload-all" class="button primary">
+                    Unload all inactive tabs
+                </button>
+            </div>
+            <div class="panel">
+                <h3>Choose tabs to unload</h3>
+                <div class="toolbar">
+                    <label class="check-label">
+                        <input id="select-loaded" type="checkbox">
+                        Select eligible loaded tabs
+                    </label>
+                    <span id="unload-selected-count" class="muted">
+                        0 selected
+                    </span>
+                </div>
+                <div id="unload-list" class="tab-list"></div>
+                <div class="bottom-actions">
+                    <span class="muted">
+                        Active tabs cannot be discarded.
+                    </span>
+                    <button id="unload-selected" class="button secondary" disabled>
+                        Unload selected
+                    </button>
+                </div>
+            </div>
+        </section>
+        <section id="view-settings" class="view hidden">
+            <div class="section-heading">
+                <div>
+                    <h2>Settings</h2>
+                    <p>Configure automatic memory-saving behavior.</p>
+                </div>
+            </div>
+            <div class="panel settings-panel">
+                <label class="setting-row">
+                    <span>
+                        <strong>Automatically unload inactive tabs</strong>
+                        <small>
+                            Check once per minute and discard tabs that
+                            exceed the threshold.
+                        </small>
+                    </span>
+                    <input id="auto-unload" type="checkbox">
+                </label>
+                <label class="setting-row">
+                    <span>
+                        <strong>Inactivity threshold</strong>
+                        <small>
+                            How long a tab must remain inactive before
+                            unloading.
+                        </small>
+                    </span>
+                    <span>
+                        <input id="inactivity-minutes" type="number" min="1" max="10080" value="30">
+                        min
+                    </span>
+                </label>
+                <button id="save-settings" class="button primary">
+                    Save settings
+                </button>
+                <span id="settings-status" class="muted" role="status">
+                </span>
+            </div>
+            <div class="notice">
+                <strong>Privacy:</strong>
+                tab titles and URLs are read locally by the extension to
+                group duplicates. No data is sent anywhere.
+            </div>
+        </section>
+    </main>
+    <dialog id="confirm-dialog">
+        <form method="dialog" id="confirm-form">
+            <h2>Close selected tabs?</h2>
+            <p id="confirm-message">
+                Review the number of tabs before closing.
+            </p>
+            <div id="confirm-preview" class="confirm-preview"></div>
+            <div class="dialog-actions">
+                <button value="cancel" class="button secondary">
+                    Cancel
+                </button>
+                <button id="confirm-close" value="confirm" class="button danger">
+                    Close tabs
+                </button>
+            </div>
+        </form>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+
+</html>

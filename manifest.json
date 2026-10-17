@@ -1,0 +1,30 @@
+{
+    "manifest_version": 3,
+    "name": "Keeping Tabs",
+    "version": "0.0.1",
+    "description": "Review duplicates, close copies, and unload inactive tabs.",
+    "permissions": [
+        "tabs",
+        "alarms",
+        "storage"
+    ],
+    "background": {
+        "scripts": [
+            "core/background/background.js"
+        ],
+        "type": "module"
+    },
+    "action": {
+        "default_title": "Open Tab Manager"
+    },
+    "options_ui": {
+        "page": "ui/manager.html",
+        "open_in_tab": true
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "tab-manager-unload@example.com",
+            "strict_min_version": "115.0"
+        }
+    }
+}
