@@ -34,12 +34,15 @@ async function initialize() {
 
 async function update_badge() {
     try {
-        const tabs = await query_tabs({ discarded: true });
-        const count = tabs.filter(tab => !is_about_tab(tab)).length;
-        await browser.action.setBadgeText({ text: count ? String(count) : "" });
+        const tabs = await query_tabs();
+        const count = tabs.length;
+        await browser.action.setBadgeText({ 
+            text: count ? String(count) : "" 
+        });
+
         await browser.action.setTitle({
             title: count
-                ? `Open Tab Manager (${count} unloaded)`
+                ? `Open Tab Manager (${count} tabs)`
                 : "Open Tab Manager"
         });
     } catch (error) {
