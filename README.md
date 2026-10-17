@@ -24,7 +24,7 @@ npm run build
 3. Click the extension's toolbar button to open the manager.
 4. Open **Settings** inside the manager to configure automatic unloading.
 
-Load the built extension from `dist/`. The root manifest is a build input;
+Load the built extension from `dist/`. `src/manifest.json` is a build input;
 TypeScript source files cannot be loaded directly as an extension.
 
 Temporary add-ons are removed when Firefox restarts. For permanent use,
@@ -63,16 +63,16 @@ watch builds transpile TypeScript; run the type check separately during edits.
 
 ## Project structure
 
-- `manifest.json`: source Firefox extension manifest.
+- `src/manifest.json`: source Firefox extension manifest.
 - `vite.config.ts`: manager/background entries and manifest packaging.
 - `tsconfig.json`: strict TypeScript configuration.
-- `core/background/background.ts`: lifecycle, toolbar, alarms, and messages.
-- `core/settings.ts`: shared defaults and stored settings access.
-- `core/types.ts`, `core/messages.ts`: shared data types and message contracts.
-- `core/tabs.ts`: queries for tabs with usable IDs.
-- `modules/tabs/`: duplicate detection and tab inactivity tracking.
-- `ui/manager.html`, `ui/manager.css`, `ui/manager.ts`: manager window.
-- `ui/components/`, `ui/utils.ts`: rendering and DOM helpers.
-- `options/settings.ts`: settings view rendering and save handling.
+- `src/core/background/background.ts`: lifecycle, toolbar, alarms, and messages.
+- `src/core/settings.ts`: shared defaults and stored settings access.
+- `src/core/types.ts`, `src/core/messages.ts`: types and message contracts.
+- `src/core/tabs.ts`: queries for tabs with usable IDs.
+- `src/modules/tabs/`: duplicate detection and tab inactivity tracking.
+- `src/ui/manager.html`, `src/ui/manager.css`, `src/ui/manager.ts`: manager window.
+- `src/ui/components/`, `src/ui/utils.ts`: rendering and DOM helpers.
+- `src/options/settings.ts`: settings view rendering and save handling.
 - `tests/`: duplicate matching, escaping, and message validation checks.
 - `dist/`: generated extension ready to load in Firefox (ignored by Git).

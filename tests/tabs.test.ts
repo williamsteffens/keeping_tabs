@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { is_manager_message } from "../core/messages.ts";
-import type { ManagedTab } from "../core/types.ts";
-import { duplicate_groups, safe_default } from "../modules/tabs/duplicates.ts";
-import { escape_html } from "../ui/utils.ts";
+import { is_manager_message } from "../src/core/messages.ts";
+import type { ManagedTab } from "../src/core/types.ts";
+import {
+    duplicate_groups, safe_default
+} from "../src/modules/tabs/duplicates.ts";
+import { escape_html } from "../src/ui/utils.ts";
 
 function tab(id: number, overrides: Partial<ManagedTab> = {}): ManagedTab {
     return {

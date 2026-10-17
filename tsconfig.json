@@ -21,10 +21,7 @@
         "skipLibCheck": true
     },
     "include": [
-        "core/**/*.ts",
-        "modules/**/*.ts",
-        "options/**/*.ts",
-        "ui/**/*.ts",
+        "src/**/*.ts",
         "vite.config.ts",
         "tests/**/*.ts"
     ]

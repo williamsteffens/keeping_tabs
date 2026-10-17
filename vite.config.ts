@@ -2,9 +2,13 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 
-const manifest_path = fileURLToPath(new URL("manifest.json", import.meta.url));
+const source_path = (path: string) => {
+    return fileURLToPath(new URL(`src/${path}`, import.meta.url));
+};
+const manifest_path = source_path("manifest.json");
 
 export default defineConfig({
+    root: source_path(""),
     base: "./",
     publicDir: false,
     plugins: [{
@@ -22,12 +26,15 @@ export default defineConfig({
     }],
     build: {
         target: "firefox115",
-        outDir: "dist",
+        outDir: "../dist",
         emptyOutDir: true,
         rolldownOptions: {
             input: {
-                manager: "ui/manager.html",
-                "core/background/background": "core/background/background.ts"
+                manager: 
+                    source_path("ui/manager.html"),
+                    "core/background/background": source_path(
+                        "core/background/background.ts"
+                    )
             },
             output: {
                 // The manifest needs a stable path to the background entry.
