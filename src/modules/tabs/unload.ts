@@ -2,19 +2,30 @@ import { query_tabs } from "../../core/tabs.ts";
 import type { ManagedTab } from "../../core/types.ts";
 import { settings } from "../../core/settings.ts";
 
+export function is_about_tab(tab: ManagedTab) {
+    return /^about:/i.test(tab.url || "");
+}
+
+export function can_unload(tab: ManagedTab) {
+    return tab.id != null && Boolean(tab.url) && !is_about_tab(tab)
+        && !tab.active && !tab.discarded;
+}
+
 export const last_active = new Map<number, number>();
 
 export async function discard_tabs(tabs: ManagedTab[]) {
     // Discard sequentially so one failure does not block the remaining tabs.
     let discarded = 0;
     for (const tab of tabs) {
-        if (tab.active || tab.discarded || tab.id == null) {
+        if (!can_unload(tab)) {
             continue;
         }
 
         try {
             await browser.tabs.discard(tab.id);
-            discarded++;
+            // Firefox may resolve discard() without unloading the tab.
+            const current = await browser.tabs.get(tab.id);
+            if (current.discarded) discarded++;
         } catch (error) {
             console.debug(`Could not discard tab ${tab.id}`, error);
         }
@@ -37,7 +48,7 @@ export async function unload_inactive() {
     const candidates = [];
 
     for (const tab of tabs) {
-        if (tab.active || tab.discarded || tab.id == null) {
+        if (!can_unload(tab)) {
             continue;
         }
 

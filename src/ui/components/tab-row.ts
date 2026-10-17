@@ -1,3 +1,4 @@
+import { can_unload } from "../../modules/tabs/unload.ts";
 import type { ManagedTab } from "../../core/types.ts";
 import { display_url, escape_html, title_of } from "../utils.ts";
 
@@ -11,7 +12,7 @@ export function render_tab_row(
         tab.pinned ? '<span class="tag">Pinned</span>' : "",
         tab.discarded ? '<span class="tag">Unloaded</span>' : ""
     ].filter(Boolean).join(" ");
-    const disabled = kind === "unload" && (tab.active || tab.discarded);
+    const disabled = kind === "unload" && !can_unload(tab);
     // Browser-internal favicon URLs cannot be loaded by extension pages.
     const accessible_icon = /^(https?:|data:image\/)/i.test(
         tab.favIconUrl || ""

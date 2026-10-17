@@ -4,6 +4,7 @@ import { settings } from "../settings.ts";
 import { toggle_manager_overlay } from "../../ui/overlay.ts";
 import {
     discard_tabs,
+    is_about_tab,
     last_active,
     unload_inactive
 } from "../../modules/tabs/unload.ts";
@@ -34,7 +35,7 @@ async function initialize() {
 async function update_badge() {
     try {
         const tabs = await query_tabs({ discarded: true });
-        const count = tabs.length;
+        const count = tabs.filter(tab => !is_about_tab(tab)).length;
         await browser.action.setBadgeText({ text: count ? String(count) : "" });
         await browser.action.setTitle({
             title: count
@@ -65,8 +66,8 @@ browser.action.onClicked.addListener(async tab => {
     }
 
     const current = await browser.windows.getLastFocused();
-    const width = 980;
-    const height = 760;
+    const width = 780;
+    const height = 560;
     const manager_url = new URL(browser.runtime.getURL("ui/manager.html"));
     if (overlay_error) {
         manager_url.searchParams.set("overlayError", overlay_error);
@@ -148,9 +149,7 @@ browser.runtime.onMessage.addListener(async (message: unknown) => {
 
     if (message.action === "unloadAll") {
         const tabs = await query_tabs();
-        const discarded = await discard_tabs(
-            tabs.filter(tab => !tab.active && !tab.discarded)
-        );
+        const discarded = await discard_tabs(tabs);
         await update_badge();
         return { discarded };
     }
@@ -159,7 +158,7 @@ browser.runtime.onMessage.addListener(async (message: unknown) => {
         const ids = new Set(message.tabIds || []);
         const tabs = await query_tabs();
         const discarded = await discard_tabs(tabs.filter(tab =>
-            ids.has(tab.id) && !tab.active && !tab.discarded
+            ids.has(tab.id)
         ));
         await update_badge();
         return { discarded };

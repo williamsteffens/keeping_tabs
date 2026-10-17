@@ -1,3 +1,7 @@
+import { can_unload, is_about_tab } from "../modules/tabs/unload.ts";
+import { setup_scrollbar } from "./components/scrollbar.ts";
+import { matching_commands } from "./commands.ts";
+import type { CommandId } from "./commands.ts";
 import { send_message } from "../core/messages.ts";
 import type { ManagedTab } from "../core/types.ts";
 import { query_element as $ } from "./utils.ts";
@@ -14,20 +18,15 @@ if (overlay_error) {
     notice.setAttribute("role", "alert");
     notice.textContent = "The page overlay could not open. Firefox reported: "
         + overlay_error;
-    document.body.prepend(notice);
-}
-
-if (window.parent !== window
-    && new URLSearchParams(location.search).has("embedded")) {
-    document.addEventListener("keydown", event => {
-        if (event.key === "Escape" && !event.defaultPrevented
-            && !$<HTMLDialogElement>("#confirm-dialog").open) {
-            window.parent.postMessage("keeping-tabs-close", "*");
-        }
-    });
+    $("#manager").prepend(notice);
 }
 
 let all_tabs: ManagedTab[] = [];
+let current_view = "commands";
+let active_command = 0;
+let command_busy = false;
+let tabs_ready = false;
+const search = $<HTMLInputElement>("#command-search");
 let selected_duplicate_ids = new Set<number>();
 let selected_unload_ids = new Set<number>();
 let pending_close_ids: number[] = [];
@@ -55,7 +54,6 @@ function render_duplicates() {
         (sum, group) => sum + group.tabs.length - 1, 0
     );
     const window_count = new Set(all_tabs.map(tab => tab.windowId)).size;
-    $("#duplicate-count").textContent = String(duplicate_copies);
     $("#duplicate-summary").innerHTML = groups.length
         ? `<strong>${groups.length} duplicate groups</strong> · `
         + `${duplicate_copies} extra copies across ${window_count} windows.`
@@ -93,10 +91,11 @@ function render_duplicates() {
 }
 
 function render_unload() {
-    const loaded = all_tabs.filter(tab => !tab.discarded);
-    const unloaded = all_tabs.filter(tab => tab.discarded);
-    const eligible = loaded.filter(tab => !tab.active);
-    $("#loaded-count").textContent = String(loaded.length);
+    const eligible = all_tabs.filter(can_unload);
+    const unloaded = all_tabs.filter(tab =>
+        tab.discarded && !is_about_tab(tab)
+    );
+    $("#loaded-count").textContent = String(eligible.length);
     $("#unloaded-count").textContent = String(unloaded.length);
     $("#window-count").textContent = String(new Set(
         all_tabs.map(tab => tab.windowId)
@@ -113,7 +112,7 @@ function sync_selections() {
         all_tabs.some(tab => tab.id === id)
     ));
     selected_unload_ids = new Set([...selected_unload_ids].filter(id =>
-        all_tabs.some(tab => tab.id === id && !tab.active && !tab.discarded)
+        all_tabs.some(tab => tab.id === id && can_unload(tab))
     ));
     $("#selected-count").textContent =
         `${selected_duplicate_ids.size} selected`;
@@ -129,35 +128,182 @@ async function refresh() {
     try {
         const state = await send_message({ action: "getState" });
         all_tabs = state.tabs || [];
+        tabs_ready = true;
+        const count = all_tabs.length;
+        $("#tab-summary").textContent =
+            `${count} tab${count === 1 ? "" : "s"} · `
+            + `${new Set(all_tabs.map(tab => tab.windowId)).size} windows`;
+        render_commands();
         render_duplicates();
         render_unload();
         sync_selections();
         render_settings(state.settings || DEFAULTS);
+        return true;
     } catch (error) {
-        show_toast("Could not load tabs. Try refreshing.");
+        $("#tab-summary").textContent = "Could not load tabs";
+        show_toast("Could not load tabs. Run Refresh open tabs to retry.");
         console.error(error);
+        return false;
     }
 }
 
-function set_view(view: string | undefined) {
-    document.querySelectorAll<HTMLButtonElement>(".nav-tab").forEach(button => {
-        button.classList.toggle("active", button.dataset.view === view);
-    });
+function set_view(view: string) {
+    current_view = view;
     document.querySelectorAll(".view").forEach(element => {
-        element.classList.toggle("hidden", element.id !== `view-${view}`);
+        const hidden = element.id !== `view-${view}`;
+        element.classList.toggle("hidden", hidden);
+        const shell = element.parentElement;
+        if (shell?.classList.contains("scroll-shell")) {
+            shell.classList.toggle("hidden", hidden);
+        }
     });
+    const home = view === "commands";
+    if (window.parent !== window) {
+        window.parent.postMessage({
+            type: "keeping-tabs-view", expanded: !home
+        }, "*");
+    }
+    $("#back").classList.toggle("hidden", home);
+    $("#manager-title").textContent = home ? "Keeping Tabs"
+        : "Keeping Tabs / " + (view === "duplicates" ? "Duplicate tabs"
+            : view === "unload" ? "Unload tabs" : "Settings");
+    if (home) {
+        search.focus();
+        search.select();
+    } else {
+        const heading = $(`#view-${view} h2`);
+        heading.tabIndex = -1;
+        heading.focus();
+    }
 }
 
-document.querySelectorAll<HTMLButtonElement>(".nav-tab").forEach(button => {
-    button.addEventListener("click", () => set_view(button.dataset.view));
-});
+function render_commands() {
+    const commands = matching_commands(search.value);
+    active_command = Math.max(0, Math.min(
+        active_command, commands.length - 1
+    ));
+    $("#command-list").innerHTML = commands.map((command, index) => {
+        const active = index === active_command;
+        const unavailable = command_busy || (!tabs_ready
+            && command.id !== "refresh" && command.id !== "settings");
+        return `<div id="command-${command.id}" class="command-row${
+            active ? " active" : ""
+        }" role="option" aria-selected="${active}"
+            aria-disabled="${unavailable}" data-command="${command.id}">
+            <span class="command-icon" aria-hidden="true">${
+                command.id === "settings"
+                    ? $("#open-settings").innerHTML : command.icon
+            }</span>
+            <span class="command-copy">
+                <span class="command-title">${command.title}</span>
+                <span class="command-description">${
+                    command.description
+                }</span>
+            </span>
+            <span class="command-detail">${
+                command_busy ? "Wait…" : command.detail
+            }</span>
+        </div>`;
+    }).join("");
+    $("#command-empty").classList.toggle("hidden", commands.length > 0);
+    const selected = commands[active_command];
+    if (selected) {
+        search.setAttribute("aria-activedescendant", `command-${selected.id}`);
+    } else {
+        search.removeAttribute("aria-activedescendant");
+    }
+}
 
-$("#refresh").addEventListener("click", refresh);
+async function run_command(id: CommandId) {
+    if (command_busy || (!tabs_ready
+        && id !== "refresh" && id !== "settings")) {
+        return;
+    }
+    if (id === "duplicates" || id === "unload" || id === "settings") {
+        set_view(id);
+        return;
+    }
+    command_busy = true;
+    search.setAttribute("aria-busy", "true");
+    render_commands();
+    try {
+        if (id === "unload-all") {
+            const result = await send_message({ action: "unloadAll" });
+            const refreshed = await refresh();
+            show_toast(
+                `Unloaded ${result.discarded} `
+                + `tab${result.discarded === 1 ? "" : "s"}.`
+                + (refreshed ? "" : " Could not refresh tab counts.")
+            );
+        } else if (await refresh()) {
+            show_toast("Open tabs refreshed.");
+        }
+    } catch (error) {
+        console.error(error);
+        show_toast("Could not unload tabs. Try again.");
+    } finally {
+        command_busy = false;
+        search.removeAttribute("aria-busy");
+        render_commands();
+        if (current_view === "commands") search.focus();
+    }
+}
+
+$("#open-settings").addEventListener("click", () => set_view("settings"));
+$("#back").addEventListener("click", () => set_view("commands"));
+search.addEventListener("input", () => {
+    active_command = 0;
+    render_commands();
+});
+search.addEventListener("keydown", event => {
+    const commands = matching_commands(search.value);
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        if (!commands.length) return;
+        active_command = (active_command
+            + (event.key === "ArrowDown" ? 1 : -1) + commands.length)
+            % commands.length;
+        render_commands();
+        document.getElementById(search.getAttribute("aria-activedescendant")
+            || "")?.scrollIntoView({ block: "nearest" });
+    } else if (event.key === "Enter") {
+        event.preventDefault();
+        const command = commands[active_command];
+        if (command) void run_command(command.id);
+    }
+});
+$("#command-list").addEventListener("click", event => {
+    if (!(event.target instanceof Element)) return;
+    const row = event.target.closest<HTMLElement>("[data-command]");
+    const commands = matching_commands(search.value);
+    const index = commands.findIndex(item => item.id === row?.dataset.command);
+    if (index < 0) return;
+    active_command = index;
+    render_commands();
+    void run_command(commands[index].id);
+});
+document.addEventListener("keydown", event => {
+    if (event.key !== "Escape" || event.defaultPrevented
+        || $<HTMLDialogElement>("#confirm-dialog").open) return;
+    event.preventDefault();
+    if (current_view !== "commands") {
+        set_view("commands");
+    } else if (search.value) {
+        search.value = "";
+        active_command = 0;
+        render_commands();
+        search.focus();
+    } else if (window.parent !== window) {
+        window.parent.postMessage("keeping-tabs-close", "*");
+    } else {
+        window.close();
+    }
+});
 
 $("#scan").addEventListener("click", async () => {
     selected_duplicate_ids.clear();
-    await refresh();
-    show_toast("Duplicate scan complete.");
+    $<HTMLInputElement>("#select-removable").checked = false;
+    if (await refresh()) show_toast("Duplicate scan complete.");
 });
 
 document.addEventListener("change", event => {
@@ -204,7 +350,7 @@ $<HTMLInputElement>("#select-loaded").addEventListener("change", event => {
     selected_unload_ids.clear();
     if ((event.currentTarget as HTMLInputElement).checked) {
         for (const tab of all_tabs) {
-            if (!tab.active && !tab.discarded) {
+            if (can_unload(tab)) {
                 selected_unload_ids.add(tab.id);
             }
         }
@@ -260,25 +406,6 @@ $<HTMLFormElement>("#confirm-form").addEventListener("submit", async event => {
     }
 });
 
-$<HTMLButtonElement>("#unload-all").addEventListener("click", async () => {
-    const button = $<HTMLButtonElement>("#unload-all");
-    button.disabled = true;
-    try {
-        const result = await send_message({
-            action: "unloadAll"
-        });
-        await refresh();
-        show_toast(
-            `Unloaded ${result.discarded} `
-            + `tab${result.discarded === 1 ? "" : "s"}.`
-        );
-    } catch {
-        show_toast("Could not unload tabs.");
-    } finally {
-        button.disabled = false;
-    }
-});
-
 $<HTMLButtonElement>("#unload-selected").addEventListener("click", async () => {
     const ids = [...selected_unload_ids];
     try {
@@ -297,6 +424,16 @@ $<HTMLButtonElement>("#unload-selected").addEventListener("click", async () => {
     }
 });
 
+for (const selector of [
+    "#view-duplicates", "#view-unload", "#view-settings",
+    "#command-list", "#confirm-form", "#confirm-preview"
+]) {
+    setup_scrollbar($(selector));
+}
+
+set_view("commands");
+render_commands();
+search.focus();
 setup_settings(show_toast);
 void refresh().then(() => {
     if (window.parent !== window

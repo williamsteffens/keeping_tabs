@@ -2,7 +2,7 @@
 
 Firefox MV3 extension with:
 
-- A dedicated manager window opened from the toolbar or with `Alt+Shift+K`.
+- A searchable command palette opened from the toolbar or with `Alt+Shift+K`.
 - An optional page overlay with a blurred background.
 - Best-effort positioning centered over the focused browser window.
 - Duplicate URL groups across windows (fragments ignored; queries retained).
@@ -23,13 +23,20 @@ npm run build
 1. In Firefox, open `about:debugging#/runtime/this-firefox`.
 2. Click **Load Temporary Add-on…** and select `dist/manifest.json`.
 3. Click the extension's toolbar button to open the manager.
-4. Open **Settings** inside the manager to configure automatic unloading.
+4. Click the **Settings** gear in the manager to configure automatic unloading.
 
 The manager shortcut is `Alt+Shift+K` (`Option+Shift+K` on macOS).
-To change it, open **Settings** in the manager, focus **Open manager shortcut**,
+To change it, click the **Settings** gear in the manager, focus **Open manager shortcut**,
 press the desired keys, and click **Save shortcut**. To disable it, click
 **Clear**, then **Save shortcut**. You can also use Firefox's
 **Manage Extension Shortcuts** page.
+
+Type to filter commands, use the arrow keys to select, and press Enter to run.
+**Unload all inactive tabs** runs directly from the command list. Duplicate
+review and individual unloading open inside the same manager. The gear
+button in the header opens settings.
+Use the back button or Escape to return to commands. In the command list,
+Escape clears a search first, then closes the manager.
 
 In **Settings**, choose **Page overlay** under **Open manager as** and save.
 The toolbar button and shortcut will then open the manager above the current
@@ -72,7 +79,9 @@ watch builds transpile TypeScript; run the type check separately during edits.
 - Duplicate matching ignores URL fragments but retains query parameters.
 - Active and pinned tabs are not preselected for closure. Manual selection is
   allowed, and the confirmation dialog identifies those tabs.
-- The currently active tab cannot be discarded by `tabs.discard()`.
+- Active tabs and all Firefox `about:` pages are excluded from unloading.
+  “Ready to unload” counts only eligible loaded tabs. Unload results count
+  tabs confirmed as discarded by Firefox, since the API can silently skip tabs.
 - Firefox/platform window placement can override the requested popup position.
 
 ## Project structure

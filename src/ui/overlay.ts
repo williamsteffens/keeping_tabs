@@ -26,20 +26,24 @@ export async function toggle_manager_overlay(manager_url: string) {
             border: 0;
             background: transparent;
             overflow: hidden;
+            overscroll-behavior: none;
         }
+            
         dialog[open] { display: flex; justify-content: center; }
         dialog::backdrop {
             background: rgb(10 15 25 / 45%);
             backdrop-filter: blur(9px);
         }
+
         iframe {
-            width: min(1100px, 100%);
-            height: 100%;
+            width: min(760px, 100%);
+            height: min(470px, 100%);
             border: 0;
-            border-radius: 16px;
+            border-radius: 8px;
             background: #121821;
             box-shadow: 0 24px 80px rgb(0 0 0 / 45%);
         }
+
         button {
             position: absolute;
             right: 24px;
@@ -80,12 +84,82 @@ export async function toggle_manager_overlay(manager_url: string) {
             && event.origin === new URL(manager_url).origin) {
             if (event.data === "keeping-tabs-ready") mark_ready();
             if (event.data === "keeping-tabs-close") dialog.close();
+            if (event.data?.type === "keeping-tabs-view"
+                && typeof event.data.expanded === "boolean") {
+                frame.style.height = event.data.expanded
+                    ? "100%" : "min(470px, 100%)";
+            }
         }
     };
 
+    const input_events = [
+        "keydown", "keyup", "keypress", "beforeinput", "input",
+        "compositionstart", "compositionupdate", "compositionend",
+        "click", "dblclick", "auxclick", "contextmenu",
+        "pointerdown", "pointerup", "pointermove", "pointercancel",
+        "mousedown", "mouseup", "mousemove", "mouseover", "mouseout",
+        "touchstart", "touchmove", "touchend", "touchcancel", "wheel",
+        "copy", "cut", "paste", "dragstart", "dragover", "drop", "focusin"
+    ];
+    let input_locked = false;
+    const page_style = document.documentElement.style;
+    let previous_overflow = "";
+    let previous_priority = "";
+    let previous_focus: HTMLElement | null = null;
+
+    function swallow_input(event: Event) {
+        // The manager iframe has its own event tree. Only events in the
+        // host page reach this guard, including the surrounding backdrop.
+        event.stopImmediatePropagation();
+        const path = event.composedPath();
+        if (event.type === "focusin") {
+            if (!path.includes(host)) frame.focus();
+            return;
+        }
+        if (event instanceof KeyboardEvent && event.type === "keydown") {
+            if (event.key === "Escape") dialog.close();
+            // Keep native modal Tab navigation between Close and the frame.
+            if (event.key === "Tab" && path.includes(host)) return;
+        }
+        event.preventDefault();
+        if (event.type === "click"
+            && (path.includes(close) || path[0] === dialog)) {
+            dialog.close();
+        }
+    }
+
+    function lock_input() {
+        previous_overflow = page_style.getPropertyValue("overflow");
+        previous_priority = page_style.getPropertyPriority("overflow");
+        previous_focus = document.activeElement as HTMLElement | null;
+        page_style.setProperty("overflow", "hidden", "important");
+        input_locked = true;
+        for (const type of input_events) {
+            window.addEventListener(type, swallow_input, {
+                capture: true, passive: false
+            });
+        }
+    }
+
     const cleanup = () => {
         window.removeEventListener("message", on_message);
+        if (input_locked) {
+            input_locked = false;
+            for (const type of input_events) {
+                window.removeEventListener(type, swallow_input, {
+                    capture: true
+                });
+            }
+            if (previous_overflow) {
+                page_style.setProperty(
+                    "overflow", previous_overflow, previous_priority
+                );
+            } else {
+                page_style.removeProperty("overflow");
+            }
+        }
         host.remove();
+        previous_focus?.focus?.({ preventScroll: true });
     };
     dialog.addEventListener("close", () => {
         cleanup();
@@ -99,6 +173,7 @@ export async function toggle_manager_overlay(manager_url: string) {
         // Load the frame while the dialog is hidden. Reveal the complete UI
         // only after its styles, scripts, and initial tab data are ready.
         await ready;
+        lock_input();
         // Modal dialogs enter the top layer, above high-z-index page UI.
         dialog.showModal();
         frame.focus();
