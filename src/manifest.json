@@ -15,7 +15,8 @@
         "type": "module"
     },
     "action": {
-        "default_title": "Open Tab Manager"
+        "default_title": "Open Tab Manager",
+        "default_area": "tabstrip"
     },
     "options_ui": {
         "page": "ui/manager.html",
