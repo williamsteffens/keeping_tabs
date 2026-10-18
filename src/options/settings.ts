@@ -3,7 +3,14 @@ import type { Settings } from "../core/types.ts";
 import { query_element as $ } from "../ui/utils.ts";
 import { recorded_shortcut } from "./shortcut.ts";
 
+export function apply_theme(theme: unknown) {
+    document.documentElement.dataset.theme =
+        theme === "light" || theme === "dark" ? theme : "system";
+}
+
 export function render_settings(settings: Settings) {
+    apply_theme(settings.theme);
+    $<HTMLSelectElement>("#theme").value = settings.theme || "system";
     $<HTMLSelectElement>("#manager-display").value =
         settings.managerDisplay || "window";
     $<HTMLInputElement>("#auto-unload").checked = Boolean(settings.autoUnload);
@@ -13,6 +20,16 @@ export function render_settings(settings: Settings) {
 }
 
 export function setup_settings(show_toast: (text: string) => void) {
+    $("#theme").addEventListener("change", () => {
+        apply_theme($<HTMLSelectElement>("#theme").value);
+    });
+    browser.storage.onChanged.addListener((changes, area) => {
+        if (area === "local" && changes.theme) {
+            apply_theme(changes.theme.newValue);
+            $<HTMLSelectElement>("#theme").value =
+                document.documentElement.dataset.theme || "system";
+        }
+    });
     setup_shortcut("command-palette", "manager", "Alt+Shift+K");
     setup_shortcut("open-tabs", "picker", "Alt+K");
 
@@ -28,6 +45,8 @@ export function setup_settings(show_toast: (text: string) => void) {
             const result = await send_message({
                 action: "saveSettings",
                 settings: {
+                    theme: $<HTMLSelectElement>("#theme")
+                        .value as Settings["theme"],
                     autoUnload: $<HTMLInputElement>("#auto-unload").checked,
                     inactivityMinutes: minutes,
                     managerDisplay:

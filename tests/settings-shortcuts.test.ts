@@ -28,6 +28,7 @@ test("settings reads and saves each registered shortcut independently", async t 
             }
         },
         browser: {
+            storage: { onChanged: { addListener: () => {} } },
             commands: {
                 getAll: async () => [...bindings].map(([name, shortcut]) => ({
                     name, shortcut

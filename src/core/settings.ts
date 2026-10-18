@@ -1,6 +1,7 @@
 import type { Settings } from "./types.ts";
 
 export const DEFAULTS: Settings = {
+    theme: "system",
     autoUnload: true,
     inactivityMinutes: 30,
     managerDisplay: "window"

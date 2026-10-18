@@ -1,4 +1,5 @@
 export interface Settings {
+    theme: "system" | "light" | "dark";
     autoUnload: boolean;
     inactivityMinutes: number;
     managerDisplay: "window" | "overlay";

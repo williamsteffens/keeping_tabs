@@ -220,6 +220,9 @@ browser.runtime.onMessage.addListener(async (message: unknown) => {
 
     if (message.action === "saveSettings") {
         const next = {
+            theme: message.settings.theme === "light"
+                || message.settings.theme === "dark"
+                ? message.settings.theme : "system" as const,
             managerDisplay: message.settings.managerDisplay === "overlay"
                 ? "overlay" as const : "window" as const,
             autoUnload: Boolean(message.settings?.autoUnload),

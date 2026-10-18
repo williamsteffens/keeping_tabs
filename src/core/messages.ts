@@ -56,6 +56,10 @@ export function is_manager_message(value: unknown): value is ManagerMessage {
                 && typeof settings.autoUnload === "boolean"
                 && "inactivityMinutes" in settings
                 && typeof settings.inactivityMinutes === "number"
+                && (!("theme" in settings)
+                    || settings.theme === "system"
+                    || settings.theme === "light"
+                    || settings.theme === "dark")
                 && (!("managerDisplay" in settings)
                     || settings.managerDisplay === "window"
                     || settings.managerDisplay === "overlay");

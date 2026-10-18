@@ -99,3 +99,16 @@ test("manager display accepts window and overlay while keeping old settings", ()
         settings: { ...settings, managerDisplay: "invalid" }
     }), false);
 });
+
+test("theme accepts system, light, and dark and rejects invalid values", () => {
+    const settings = { autoUnload: true, inactivityMinutes: 30 };
+    for (const theme of ["system", "light", "dark"]) {
+        assert.equal(is_manager_message({
+            action: "saveSettings", settings: { ...settings, theme }
+        }), true);
+    }
+    assert.equal(is_manager_message({
+        action: "saveSettings",
+        settings: { ...settings, theme: "invalid" }
+    }), false);
+});

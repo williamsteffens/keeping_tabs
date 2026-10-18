@@ -185,10 +185,23 @@
             <div class="section-heading">
                 <div>
                     <h2>Settings</h2>
-                    <p>Configure automatic unloading and keyboard shortcuts.</p>
+                    <p>Configure appearance, unloading, and shortcuts.</p>
                 </div>
             </div>
             <div class="panel settings-panel">
+                <label class="setting-row" for="theme">
+                    <span>
+                        <strong>Appearance</strong>
+                        <small>
+                            Choose a theme or follow your system setting.
+                        </small>
+                    </span>
+                    <select id="theme">
+                        <option value="system">System</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </label>
                 <label class="setting-row" for="manager-display">
                     <span>
                         <strong>Open manager as</strong>
