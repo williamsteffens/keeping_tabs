@@ -4,9 +4,9 @@ export const DEFAULTS: Settings = {
     theme: "system",
     autoUnload: true,
     inactivityMinutes: 30,
-    managerDisplay: "window"
+    managerDisplay: "window",
 };
 
 export async function settings(): Promise<Settings> {
-    return await browser.storage.local.get(DEFAULTS) as Settings;
+    return (await browser.storage.local.get(DEFAULTS)) as Settings;
 }

@@ -5,7 +5,7 @@ import { toggle_manager_overlay } from "../../ui/overlay.ts";
 import {
     discard_tabs,
     last_active,
-    unload_inactive
+    unload_inactive,
 } from "../../modules/tabs/unload.ts";
 
 const ALARM = "tab-manager-auto-unload";
@@ -35,14 +35,14 @@ async function update_badge() {
     try {
         const tabs = await query_tabs();
         const count = tabs.length;
-        await browser.action.setBadgeText({ 
-            text: count ? String(count) : "" 
+        await browser.action.setBadgeText({
+            text: count ? String(count) : "",
         });
 
         await browser.action.setTitle({
             title: count
                 ? `Open Tab Manager (${count} tabs)`
-                : "Open Tab Manager"
+                : "Open Tab Manager",
         });
     } catch (error) {
         console.warn("Could not update badge", error);
@@ -50,12 +50,18 @@ async function update_badge() {
 }
 
 async function open_manager(
-    source_tab: browser.tabs.Tab | undefined, mode = "commands"
+    source_tab: browser.tabs.Tab | undefined,
+    mode = "commands",
 ) {
     // Firefox before 126 supplies only the command name to onCommand.
-    const tab = source_tab || (await browser.tabs.query({
-        active: true, currentWindow: true
-    }))[0];
+    const tab =
+        source_tab
+        || (
+            await browser.tabs.query({
+                active: true,
+                currentWindow: true,
+            })
+        )[0];
     const current_settings = await settings();
     const manager_url = new URL(browser.runtime.getURL("ui/manager.html"));
     manager_url.searchParams.set("mode", mode);
@@ -70,12 +76,14 @@ async function open_manager(
             await browser.scripting.executeScript({
                 target: { tabId: tab.id },
                 func: toggle_manager_overlay,
-                args: [overlay_url.href]
+                args: [
+                    overlay_url.href,
+                ],
             });
             return;
         } catch (error) {
-            overlay_error = error instanceof Error
-                ? error.message : String(error);
+            overlay_error =
+                error instanceof Error ? error.message : String(error);
             console.warn("Page overlay unavailable; opening a window", error);
         }
     }
@@ -91,11 +99,12 @@ async function open_manager(
         type: "popup",
         width,
         height,
-        focused: true
+        focused: true,
     };
 
     // Best-effort centering over the currently focused browser window.
-    if (current
+    if (
+        current
         && typeof current.left === "number"
         && Number.isFinite(current.left)
         && typeof current.top === "number"
@@ -103,12 +112,15 @@ async function open_manager(
         && typeof current.width === "number"
         && Number.isFinite(current.width)
         && typeof current.height === "number"
-        && Number.isFinite(current.height)) {
+        && Number.isFinite(current.height)
+    ) {
         create_data.left = Math.max(
-            0, Math.round(current.left + (current.width - width) / 2)
+            0,
+            Math.round(current.left + (current.width - width) / 2),
         );
         create_data.top = Math.max(
-            0, Math.round(current.top + (current.height - height) / 2)
+            0,
+            Math.round(current.top + (current.height - height) / 2),
         );
     }
 
@@ -122,7 +134,7 @@ async function open_manager(
     }
 }
 
-browser.action.onClicked.addListener(tab => {
+browser.action.onClicked.addListener((tab) => {
     void open_manager(tab).catch(console.error);
 });
 browser.commands.onCommand.addListener((command, tab) => {
@@ -132,7 +144,7 @@ browser.commands.onCommand.addListener((command, tab) => {
     }
 });
 
-browser.alarms.onAlarm.addListener(alarm => {
+browser.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === ALARM) {
         unload_inactive().then(update_badge).catch(console.error);
     }
@@ -143,13 +155,13 @@ browser.tabs.onActivated.addListener(({ tabId: tab_id }) => {
     update_badge();
 });
 
-browser.tabs.onCreated.addListener(tab => {
+browser.tabs.onCreated.addListener((tab) => {
     if (tab.id != null) {
         last_active.set(tab.id, Date.now());
     }
 });
 
-browser.tabs.onRemoved.addListener(tab_id => last_active.delete(tab_id));
+browser.tabs.onRemoved.addListener((tab_id) => last_active.delete(tab_id));
 
 browser.tabs.onUpdated.addListener((tab_id, change_info) => {
     if (change_info.discarded === false) {
@@ -181,20 +193,24 @@ browser.runtime.onMessage.addListener(async (message: unknown) => {
     if (message.action === "unloadSelected") {
         const ids = new Set(message.tabIds || []);
         const tabs = await query_tabs();
-        const discarded = await discard_tabs(tabs.filter(tab =>
-            ids.has(tab.id)
-        ));
+        const discarded = await discard_tabs(
+            tabs.filter((tab) => ids.has(tab.id)),
+        );
         await update_badge();
         return { discarded };
     }
 
     if (message.action === "closeSelected") {
-        const ids = [...new Set(message.tabIds || [])];
+        const ids = [
+            ...new Set(message.tabIds || []),
+        ];
         const current_tabs = await query_tabs();
         const allowed = new Set(
-            current_tabs.filter(tab => ids.includes(tab.id)).map(tab => tab.id)
+            current_tabs
+                .filter((tab) => ids.includes(tab.id))
+                .map((tab) => tab.id),
         );
-        const safe_ids = ids.filter(id => allowed.has(id));
+        const safe_ids = ids.filter((id) => allowed.has(id));
         await browser.tabs.remove(safe_ids);
         for (const id of safe_ids) {
             last_active.delete(id);
@@ -213,25 +229,34 @@ browser.runtime.onMessage.addListener(async (message: unknown) => {
 
     if (message.action === "getState") {
         const [tabs, current_settings] = await Promise.all([
-            query_tabs(), settings()
+            query_tabs(),
+            settings(),
         ]);
-        return { tabs, settings: current_settings };
+        return {
+            tabs,
+            settings: current_settings,
+        };
     }
 
     if (message.action === "saveSettings") {
         const next = {
-            theme: message.settings.theme === "light"
+            theme:
+                message.settings.theme === "light"
                 || message.settings.theme === "dark"
-                ? message.settings.theme : "system" as const,
-            managerDisplay: message.settings.managerDisplay === "overlay"
-                ? "overlay" as const : "window" as const,
+                    ? message.settings.theme
+                    : ("system" as const),
+            managerDisplay:
+                message.settings.managerDisplay === "overlay"
+                    ? ("overlay" as const)
+                    : ("window" as const),
             autoUnload: Boolean(message.settings?.autoUnload),
             inactivityMinutes: Math.max(
                 1,
                 Math.min(
-                    10080, Number(message.settings?.inactivityMinutes) || 30
-                )
-            )
+                    10080,
+                    Number(message.settings?.inactivityMinutes) || 30,
+                ),
+            ),
         };
         await browser.storage.local.set(next);
         await refresh_alarm();

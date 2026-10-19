@@ -1,5 +1,8 @@
 import { setup_tab_picker } from "./tab-picker.ts";
-import { can_unload, is_about_tab } from "../modules/tabs/unload.ts";
+import {
+    can_unload,
+    is_about_tab,
+} from "../modules/tabs/unload.ts";
 import { setup_scrollbar } from "./components/scrollbar.ts";
 import { matching_commands } from "./commands.ts";
 import type { CommandId } from "./commands.ts";
@@ -7,18 +10,28 @@ import { send_message } from "../core/messages.ts";
 import type { ManagedTab } from "../core/types.ts";
 import { query_element as $ } from "./utils.ts";
 import { DEFAULTS } from "../core/settings.ts";
-import { duplicate_groups, safe_default } from "../modules/tabs/duplicates.ts";
-import { render_settings, setup_settings } from "../options/settings.ts";
+import {
+    duplicate_groups,
+    safe_default,
+} from "../modules/tabs/duplicates.ts";
+import {
+    render_settings,
+    setup_settings,
+} from "../options/settings.ts";
 import { render_tab_row } from "./components/tab-row.ts";
-import { display_url, escape_html, title_of } from "./utils.ts";
+import {
+    display_url,
+    escape_html,
+    title_of,
+} from "./utils.ts";
 
 const overlay_error = new URLSearchParams(location.search).get("overlayError");
 if (overlay_error) {
     const notice = document.createElement("div");
     notice.className = "notice";
     notice.setAttribute("role", "alert");
-    notice.textContent = "The page overlay could not open. Firefox reported: "
-        + overlay_error;
+    notice.textContent =
+        "The page overlay could not open. Firefox reported: " + overlay_error;
     $("#manager").prepend(notice);
 }
 
@@ -27,22 +40,31 @@ let current_view = "commands";
 const initial_mode = new URLSearchParams(location.search).get("mode");
 let palette_mode = initial_mode === "tabs" ? "tabs" : "commands";
 const source_param = new URLSearchParams(location.search).get("sourceWindow");
-const source_window = source_param != null && /^\d+$/.test(source_param)
-    ? Number(source_param) : undefined;
+const source_window =
+    source_param != null && /^\d+$/.test(source_param)
+        ? Number(source_param)
+        : undefined;
 let active_command = 0;
 let command_busy = false;
 let tabs_ready = false;
 const search = $<HTMLInputElement>("#command-search");
-window.addEventListener("message", event => {
+window.addEventListener("message", (event) => {
     if (window.parent === window || event.source !== window.parent) return;
-    if (event.data?.type === "keeping-tabs-mode"
-        && ["tabs", "commands"].includes(event.data.mode)) {
+    if (
+        event.data?.type === "keeping-tabs-mode"
+        && [
+            "tabs",
+            "commands",
+        ].includes(event.data.mode)
+    ) {
         if ($<HTMLDialogElement>("#confirm-dialog").open) return;
         set_palette_mode(event.data.mode);
     }
-    if (event.data === "keeping-tabs-focus-search"
+    if (
+        event.data === "keeping-tabs-focus-search"
         && current_view === "commands"
-        && !$<HTMLDialogElement>("#confirm-dialog").open) {
+        && !$<HTMLDialogElement>("#confirm-dialog").open
+    ) {
         search.focus({ preventScroll: true });
     }
 });
@@ -71,21 +93,30 @@ function close_manager() {
 
 let manager_tab_id: number | undefined;
 const tab_picker = setup_tab_picker(
-    () => all_tabs.filter(tab => tab.id !== manager_tab_id),
-    source_window, close_manager, show_toast
+    () => all_tabs.filter((tab) => tab.id !== manager_tab_id),
+    source_window,
+    close_manager,
+    show_toast,
 );
 // A separate manager window is itself a tab; keep it out of its own picker.
-void browser.tabs?.getCurrent?.().then(tab => {
-    manager_tab_id = tab?.id;
-    if (palette_mode === "tabs") render_commands();
-}).catch(console.error);
+void browser.tabs
+    ?.getCurrent?.()
+    .then((tab) => {
+        manager_tab_id = tab?.id;
+        if (palette_mode === "tabs") render_commands();
+    })
+    .catch(console.error);
 
 function set_palette_mode(mode: string) {
     palette_mode = mode;
     if (window.parent !== window) {
-        window.parent.postMessage({
-            type: "keeping-tabs-palette", mode
-        }, "*");
+        window.parent.postMessage(
+            {
+                type: "keeping-tabs-palette",
+                mode,
+            },
+            "*",
+        );
     }
     active_command = 0;
     search.value = "";
@@ -94,77 +125,102 @@ function set_palette_mode(mode: string) {
 }
 
 function preferred_tab(tabs: ManagedTab[]) {
-    return tabs.find(tab => tab.active)
-        || tabs.find(tab => tab.pinned)
-        || tabs[0];
+    return (
+        tabs.find((tab) => tab.active)
+        || tabs.find((tab) => tab.pinned)
+        || tabs[0]
+    );
 }
 
 function render_duplicates() {
     const groups = duplicate_groups(all_tabs);
     const duplicate_copies = groups.reduce(
-        (sum, group) => sum + group.tabs.length - 1, 0
+        (sum, group) => sum + group.tabs.length - 1,
+        0,
     );
-    const window_count = new Set(all_tabs.map(tab => tab.windowId)).size;
+    const window_count = new Set(all_tabs.map((tab) => tab.windowId)).size;
     $("#duplicate-summary").innerHTML = groups.length
         ? `<strong>${groups.length} duplicate groups</strong> · `
-        + `${duplicate_copies} extra copies across ${window_count} windows.`
+          + `${duplicate_copies} extra copies across ${window_count} windows.`
         : "<strong>No duplicate tabs found.</strong> Your open tabs have no "
-        + "matching URLs under the current matching rules.";
+          + "matching URLs under the current matching rules.";
 
     const root = $("#duplicate-list");
     if (!groups.length) {
-        root.innerHTML = '<div class="empty">You’re all clear. Use '
-            + '“Scan again” after opening more tabs.</div>';
+        root.innerHTML =
+            '<div class="empty">You’re all clear. Use '
+            + "“Scan again” after opening more tabs.</div>";
         return;
     }
 
-    root.innerHTML = groups.map(group => {
-        const preferred = preferred_tab(group.tabs);
-        if (!preferred) {
-            return "";
-        }
-        const rows = group.tabs.map(tab => render_tab_row(
-            tab, "duplicate", selected_duplicate_ids.has(tab.id)
-        )).join("");
+    root.innerHTML = groups
+        .map((group) => {
+            const preferred = preferred_tab(group.tabs);
+            if (!preferred) {
+                return "";
+            }
+            const rows = group.tabs
+                .map((tab) =>
+                    render_tab_row(
+                        tab,
+                        "duplicate",
+                        selected_duplicate_ids.has(tab.id),
+                    ),
+                )
+                .join("");
 
-        return `<article class="group-card">
+            return `<article class="group-card">
             <div class="group-header">
                 <div>
-                    <div class="group-title">${escape_html(title_of(preferred))
-            }</div>
+                    <div class="group-title">${escape_html(
+                        title_of(preferred),
+                    )}</div>
                     <div class="group-url">${escape_html(group.url)}</div>
                 </div>
                 <span class="group-meta">${group.tabs.length} copies</span>
             </div>
             ${rows}
         </article>`;
-    }).join("");
+        })
+        .join("");
 }
 
 function render_unload() {
     const eligible = all_tabs.filter(can_unload);
-    const unloaded = all_tabs.filter(tab =>
-        tab.discarded && !is_about_tab(tab)
+    const unloaded = all_tabs.filter(
+        (tab) => tab.discarded && !is_about_tab(tab),
     );
     $("#loaded-count").textContent = String(eligible.length);
     $("#unloaded-count").textContent = String(unloaded.length);
-    $("#window-count").textContent = String(new Set(
-        all_tabs.map(tab => tab.windowId)
-    ).size);
+    $("#window-count").textContent = String(
+        new Set(all_tabs.map((tab) => tab.windowId)).size,
+    );
     $("#unload-list").innerHTML = eligible.length
-        ? eligible.map(tab => render_tab_row(
-            tab, "unload", selected_unload_ids.has(tab.id)
-        )).join("")
+        ? eligible
+              .map((tab) =>
+                  render_tab_row(
+                      tab,
+                      "unload",
+                      selected_unload_ids.has(tab.id),
+                  ),
+              )
+              .join("")
         : '<div class="empty">No eligible loaded tabs to unload.</div>';
 }
 
 function sync_selections() {
-    selected_duplicate_ids = new Set([...selected_duplicate_ids].filter(id =>
-        all_tabs.some(tab => tab.id === id)
-    ));
-    selected_unload_ids = new Set([...selected_unload_ids].filter(id =>
-        all_tabs.some(tab => tab.id === id && can_unload(tab))
-    ));
+    selected_duplicate_ids = new Set(
+        [
+            ...selected_duplicate_ids,
+        ].filter((id) => all_tabs.some((tab) => tab.id === id)),
+    );
+    selected_unload_ids = new Set(
+        [
+            ...selected_unload_ids,
+        ].filter((id) =>
+            all_tabs.some((tab) => tab.id === id && can_unload(tab)),
+        ),
+    );
     $("#selected-count").textContent =
         `${selected_duplicate_ids.size} selected`;
     $<HTMLButtonElement>("#review-close").disabled =
@@ -183,7 +239,7 @@ async function refresh() {
         const count = all_tabs.length;
         $("#tab-summary").textContent =
             `${count} tab${count === 1 ? "" : "s"} · `
-            + `${new Set(all_tabs.map(tab => tab.windowId)).size} windows`;
+            + `${new Set(all_tabs.map((tab) => tab.windowId)).size} windows`;
         render_commands();
         render_duplicates();
         render_unload();
@@ -200,7 +256,7 @@ async function refresh() {
 
 function set_view(view: string) {
     current_view = view;
-    document.querySelectorAll(".view").forEach(element => {
+    document.querySelectorAll(".view").forEach((element) => {
         const hidden = element.id !== `view-${view}`;
         element.classList.toggle("hidden", hidden);
         const shell = element.parentElement;
@@ -211,15 +267,25 @@ function set_view(view: string) {
     const home = view === "commands";
     $("#manager").classList.toggle("expanded", !home);
     if (window.parent !== window) {
-        window.parent.postMessage({
-            type: "keeping-tabs-view", expanded: !home
-        }, "*");
+        window.parent.postMessage(
+            {
+                type: "keeping-tabs-view",
+                expanded: !home,
+            },
+            "*",
+        );
     }
     $("#back").classList.toggle("hidden", home);
     $("#manager-title").textContent = home
-        ? (palette_mode === "tabs" ? "Open tabs" : "Keeping Tabs")
-        : "Keeping Tabs / " + (view === "duplicates" ? "Duplicate tabs"
-            : view === "unload" ? "Unload tabs" : "Settings");
+        ? palette_mode === "tabs"
+            ? "Open tabs"
+            : "Keeping Tabs"
+        : "Keeping Tabs / "
+          + (view === "duplicates"
+              ? "Duplicate tabs"
+              : view === "unload"
+                ? "Unload tabs"
+                : "Settings");
     if (home) {
         search.focus();
         search.select();
@@ -235,15 +301,21 @@ function render_commands() {
     $("#manager").classList.toggle("tab-picker-mode", picking);
     $("#picker-filters").classList.toggle("hidden", !picking);
     $("#toggle-picker").textContent = picking ? "Commands" : "Tabs";
-    $("#toggle-picker").title = picking ? "Open commands"
+    $("#toggle-picker").title = picking
+        ? "Open commands"
         : "Search open tabs (Alt+K)";
     $("#command-prompt").textContent = picking ? "⌕" : ">";
-    search.placeholder = picking ? "Search tabs by title or URL…"
+    search.placeholder = picking
+        ? "Search tabs by title or URL…"
         : "Type a command…";
-    search.setAttribute("aria-label", picking ? "Search open tabs"
-        : "Search commands");
-    $("#command-list").setAttribute("aria-label", picking ? "Open tabs"
-        : "Commands");
+    search.setAttribute(
+        "aria-label",
+        picking ? "Search open tabs" : "Search commands",
+    );
+    $("#command-list").setAttribute(
+        "aria-label",
+        picking ? "Open tabs" : "Commands",
+    );
     $("#enter-hint").textContent = picking ? "to switch" : "to run";
     if (picking) {
         tab_picker.render();
@@ -252,32 +324,34 @@ function render_commands() {
     $("#command-empty").textContent =
         "No matching commands. Try “unload” or “tabs”.";
     const commands = matching_commands(search.value);
-    active_command = Math.max(0, Math.min(
-        active_command, commands.length - 1
-    ));
-    $("#command-list").innerHTML = commands.map((command, index) => {
-        const active = index === active_command;
-        const unavailable = command_busy || (!tabs_ready
-            && command.id !== "refresh" && command.id !== "settings");
-        return `<div id="command-${command.id}" class="command-row${
-            active ? " active" : ""
-        }" role="option" aria-selected="${active}"
+    active_command = Math.max(0, Math.min(active_command, commands.length - 1));
+    $("#command-list").innerHTML = commands
+        .map((command, index) => {
+            const active = index === active_command;
+            const unavailable =
+                command_busy
+                || (!tabs_ready
+                    && command.id !== "refresh"
+                    && command.id !== "settings");
+            return `<div id="command-${command.id}" class="command-row${
+                active ? " active" : ""
+            }" role="option" aria-selected="${active}"
             aria-disabled="${unavailable}" data-command="${command.id}">
             <span class="command-icon" aria-hidden="true">${
                 command.id === "settings"
-                    ? $("#open-settings").innerHTML : command.icon
+                    ? $("#open-settings").innerHTML
+                    : command.icon
             }</span>
             <span class="command-copy">
                 <span class="command-title">${command.title}</span>
-                <span class="command-description">${
-                    command.description
-                }</span>
+                <span class="command-description">${command.description}</span>
             </span>
             <span class="command-detail">${
                 command_busy ? "Wait…" : command.detail
             }</span>
         </div>`;
-    }).join("");
+        })
+        .join("");
     $("#command-empty").classList.toggle("hidden", commands.length > 0);
     const selected = commands[active_command];
     if (selected) {
@@ -288,8 +362,10 @@ function render_commands() {
 }
 
 async function run_command(id: CommandId) {
-    if (command_busy || (!tabs_ready
-        && id !== "refresh" && id !== "settings")) {
+    if (
+        command_busy
+        || (!tabs_ready && id !== "refresh" && id !== "settings")
+    ) {
         return;
     }
     if (id === "tabs") {
@@ -309,8 +385,8 @@ async function run_command(id: CommandId) {
             const refreshed = await refresh();
             show_toast(
                 `Unloaded ${result.discarded} `
-                + `tab${result.discarded === 1 ? "" : "s"}.`
-                + (refreshed ? "" : " Could not refresh tab counts.")
+                    + `tab${result.discarded === 1 ? "" : "s"}.`
+                    + (refreshed ? "" : " Could not refresh tab counts."),
             );
         } else if (await refresh()) {
             show_toast("Open tabs refreshed.");
@@ -336,7 +412,7 @@ search.addEventListener("input", () => {
     if (palette_mode === "tabs") tab_picker.render(true);
     else render_commands();
 });
-search.addEventListener("keydown", event => {
+search.addEventListener("keydown", (event) => {
     if (palette_mode === "tabs") {
         if (event.key === "ArrowDown" || event.key === "ArrowUp") {
             event.preventDefault();
@@ -351,19 +427,22 @@ search.addEventListener("keydown", event => {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         event.preventDefault();
         if (!commands.length) return;
-        active_command = (active_command
-            + (event.key === "ArrowDown" ? 1 : -1) + commands.length)
+        active_command =
+            (active_command
+                + (event.key === "ArrowDown" ? 1 : -1)
+                + commands.length)
             % commands.length;
         render_commands();
-        document.getElementById(search.getAttribute("aria-activedescendant")
-            || "")?.scrollIntoView({ block: "nearest" });
+        document
+            .getElementById(search.getAttribute("aria-activedescendant") || "")
+            ?.scrollIntoView({ block: "nearest" });
     } else if (event.key === "Enter") {
         event.preventDefault();
         const command = commands[active_command];
         if (command) void run_command(command.id);
     }
 });
-$("#command-list").addEventListener("click", event => {
+$("#command-list").addEventListener("click", (event) => {
     if (!(event.target instanceof Element)) return;
     if (palette_mode === "tabs") {
         const row = event.target.closest<HTMLElement>("[data-tab-id]");
@@ -372,15 +451,21 @@ $("#command-list").addEventListener("click", event => {
     }
     const row = event.target.closest<HTMLElement>("[data-command]");
     const commands = matching_commands(search.value);
-    const index = commands.findIndex(item => item.id === row?.dataset.command);
+    const index = commands.findIndex(
+        (item) => item.id === row?.dataset.command,
+    );
     if (index < 0) return;
     active_command = index;
     render_commands();
     void run_command(commands[index].id);
 });
-document.addEventListener("keydown", event => {
-    if (event.key !== "Escape" || event.defaultPrevented
-        || $<HTMLDialogElement>("#confirm-dialog").open) return;
+document.addEventListener("keydown", (event) => {
+    if (
+        event.key !== "Escape"
+        || event.defaultPrevented
+        || $<HTMLDialogElement>("#confirm-dialog").open
+    )
+        return;
     event.preventDefault();
     if (current_view !== "commands") {
         set_view("commands");
@@ -400,7 +485,7 @@ $("#scan").addEventListener("click", async () => {
     if (await refresh()) show_toast("Duplicate scan complete.");
 });
 
-document.addEventListener("change", event => {
+document.addEventListener("change", (event) => {
     const input = event.target;
     if (!(input instanceof HTMLInputElement)) {
         return;
@@ -424,7 +509,7 @@ document.addEventListener("change", event => {
     }
 });
 
-$<HTMLInputElement>("#select-removable").addEventListener("change", event => {
+$<HTMLInputElement>("#select-removable").addEventListener("change", (event) => {
     selected_duplicate_ids.clear();
     if ((event.currentTarget as HTMLInputElement).checked) {
         for (const group of duplicate_groups(all_tabs)) {
@@ -440,7 +525,7 @@ $<HTMLInputElement>("#select-removable").addEventListener("change", event => {
     sync_selections();
 });
 
-$<HTMLInputElement>("#select-loaded").addEventListener("change", event => {
+$<HTMLInputElement>("#select-loaded").addEventListener("change", (event) => {
     selected_unload_ids.clear();
     if ((event.currentTarget as HTMLInputElement).checked) {
         for (const tab of all_tabs) {
@@ -454,64 +539,78 @@ $<HTMLInputElement>("#select-loaded").addEventListener("change", event => {
 });
 
 $<HTMLButtonElement>("#review-close").addEventListener("click", () => {
-    const chosen = all_tabs.filter(tab => selected_duplicate_ids.has(tab.id));
+    const chosen = all_tabs.filter((tab) => selected_duplicate_ids.has(tab.id));
     if (!chosen.length) {
         return;
     }
 
-    pending_close_ids = chosen.map(tab => tab.id);
+    pending_close_ids = chosen.map((tab) => tab.id);
     const tab_label = `tab${chosen.length === 1 ? "" : "s"}`;
     $("#confirm-message").textContent =
         `You’re about to close ${chosen.length} ${tab_label}. `
         + "This cannot be undone by the extension.";
-    $("#confirm-preview").innerHTML = chosen.map(tab =>
-        `<div><strong>${escape_html(title_of(tab))}</strong><br>`
-        + escape_html(display_url(tab.url))
-        + `${tab.active ? " · ACTIVE" : ""}`
-        + `${tab.pinned ? " · PINNED" : ""}</div>`
-    ).join("");
+    $("#confirm-preview").innerHTML = chosen
+        .map(
+            (tab) =>
+                `<div><strong>${escape_html(title_of(tab))}</strong><br>`
+                + escape_html(display_url(tab.url))
+                + `${tab.active ? " · ACTIVE" : ""}`
+                + `${tab.pinned ? " · PINNED" : ""}</div>`,
+        )
+        .join("");
     $("#confirm-close").textContent = `Close ${chosen.length} ${tab_label}`;
     $<HTMLDialogElement>("#confirm-dialog").showModal();
 });
 
-$<HTMLFormElement>("#confirm-form").addEventListener("submit", async event => {
-    event.preventDefault();
-    if (!(event.submitter instanceof HTMLButtonElement)
-        || event.submitter.value !== "confirm") {
-        $<HTMLDialogElement>("#confirm-dialog").close();
-        return;
-    }
+$<HTMLFormElement>("#confirm-form").addEventListener(
+    "submit",
+    async (event) => {
+        event.preventDefault();
+        if (
+            !(event.submitter instanceof HTMLButtonElement)
+            || event.submitter.value !== "confirm"
+        ) {
+            $<HTMLDialogElement>("#confirm-dialog").close();
+            return;
+        }
 
-    const ids = [...pending_close_ids];
-    $<HTMLDialogElement>("#confirm-dialog").close();
-    try {
-        const result = await send_message({
-            action: "closeSelected", tabIds: ids
-        });
-        selected_duplicate_ids.clear();
-        $<HTMLInputElement>("#select-removable").checked = false;
-        await refresh();
-        show_toast(
-            `Closed ${result.closed} tab${result.closed === 1 ? "" : "s"}.`
-        );
-    } catch (error) {
-        console.error(error);
-        show_toast("Some tabs could not be closed.");
-    }
-});
+        const ids = [
+            ...pending_close_ids,
+        ];
+        $<HTMLDialogElement>("#confirm-dialog").close();
+        try {
+            const result = await send_message({
+                action: "closeSelected",
+                tabIds: ids,
+            });
+            selected_duplicate_ids.clear();
+            $<HTMLInputElement>("#select-removable").checked = false;
+            await refresh();
+            show_toast(
+                `Closed ${result.closed} tab${result.closed === 1 ? "" : "s"}.`,
+            );
+        } catch (error) {
+            console.error(error);
+            show_toast("Some tabs could not be closed.");
+        }
+    },
+);
 
 $<HTMLButtonElement>("#unload-selected").addEventListener("click", async () => {
-    const ids = [...selected_unload_ids];
+    const ids = [
+        ...selected_unload_ids,
+    ];
     try {
         const result = await send_message({
-            action: "unloadSelected", tabIds: ids
+            action: "unloadSelected",
+            tabIds: ids,
         });
         selected_unload_ids.clear();
         $<HTMLInputElement>("#select-loaded").checked = false;
         await refresh();
         show_toast(
             `Unloaded ${result.discarded} `
-            + `tab${result.discarded === 1 ? "" : "s"}.`
+                + `tab${result.discarded === 1 ? "" : "s"}.`,
         );
     } catch {
         show_toast("Could not unload selected tabs.");
@@ -519,8 +618,12 @@ $<HTMLButtonElement>("#unload-selected").addEventListener("click", async () => {
 });
 
 for (const selector of [
-    "#view-duplicates", "#view-unload", "#view-settings",
-    "#command-list", "#confirm-form", "#confirm-preview"
+    "#view-duplicates",
+    "#view-unload",
+    "#view-settings",
+    "#command-list",
+    "#confirm-form",
+    "#confirm-preview",
 ]) {
     setup_scrollbar($(selector));
 }
@@ -538,23 +641,32 @@ function setup_manager_size() {
         const expanded = current_view !== "commands";
         // Include rows clipped by the current iframe height so filtering
         // can grow the palette again after it has shrunk.
-        const height = expanded ? 760 : Math.ceil(manager.scrollHeight
-            + Math.max(0, list.scrollHeight - list.clientHeight));
+        const height = expanded
+            ? 760
+            : Math.ceil(
+                  manager.scrollHeight
+                      + Math.max(0, list.scrollHeight - list.clientHeight),
+              );
         if (height <= 0 || height === last_height) return;
         last_height = height;
         if (window.parent !== window) {
             if (!expanded) {
-                window.parent.postMessage({
-                    type: "keeping-tabs-size", height
-                }, "*");
+                window.parent.postMessage(
+                    {
+                        type: "keeping-tabs-size",
+                        height,
+                    },
+                    "*",
+                );
             }
         } else if (popup_id != null) {
             const chrome_height = window.outerHeight - window.innerHeight;
             try {
                 await browser.windows.update(popup_id, {
                     height: Math.min(
-                        screen.availHeight, height + chrome_height
-                    )
+                        screen.availHeight,
+                        height + chrome_height,
+                    ),
                 });
             } catch (error) {
                 console.debug("Could not resize manager window", error);
@@ -565,7 +677,9 @@ function setup_manager_size() {
     function schedule() {
         if (scheduled) return;
         scheduled = true;
-        requestAnimationFrame(() => { void resize(); });
+        requestAnimationFrame(() => {
+            void resize();
+        });
     }
 
     const observer = new ResizeObserver(schedule);
@@ -573,16 +687,21 @@ function setup_manager_size() {
     observer.observe(commands);
     const mutations = new MutationObserver(schedule);
     mutations.observe(commands, {
-        subtree: true, childList: true, characterData: true
+        subtree: true,
+        childList: true,
+        characterData: true,
     });
     if (window.parent === window) {
-        void browser.windows.getCurrent().then(current => {
-            // The options page can also open in a regular browser tab.
-            if (current.type !== "popup") return;
-            popup_id = current.id;
-            last_height = 0;
-            schedule();
-        }).catch(console.error);
+        void browser.windows
+            .getCurrent()
+            .then((current) => {
+                // The options page can also open in a regular browser tab.
+                if (current.type !== "popup") return;
+                popup_id = current.id;
+                last_height = 0;
+                schedule();
+            })
+            .catch(console.error);
     }
     schedule();
 }
@@ -598,9 +717,13 @@ function update_picker_tabs() {
     }, 120);
 }
 for (const event of [
-    browser.tabs?.onCreated, browser.tabs?.onRemoved, browser.tabs?.onUpdated,
-    browser.tabs?.onActivated, browser.tabs?.onMoved, browser.tabs?.onAttached,
-    browser.tabs?.onDetached
+    browser.tabs?.onCreated,
+    browser.tabs?.onRemoved,
+    browser.tabs?.onUpdated,
+    browser.tabs?.onActivated,
+    browser.tabs?.onMoved,
+    browser.tabs?.onAttached,
+    browser.tabs?.onDetached,
 ]) {
     event?.addListener(update_picker_tabs);
 }
@@ -611,8 +734,10 @@ render_commands();
 search.focus();
 setup_settings(show_toast);
 void refresh().then(() => {
-    if (window.parent !== window
-        && new URLSearchParams(location.search).has("embedded")) {
+    if (
+        window.parent !== window
+        && new URLSearchParams(location.search).has("embedded")
+    ) {
         window.parent.postMessage("keeping-tabs-ready", "*");
     }
 });

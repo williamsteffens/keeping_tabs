@@ -26,15 +26,18 @@ export function duplicate_groups(all_tabs: ManagedTab[]) {
         groups.get(key)?.push(tab);
     }
 
-    return [...groups.entries()]
+    return [
+        ...groups.entries(),
+    ]
         .filter(([, tabs]) => tabs.length > 1)
         .map(([url, tabs]) => ({
             url,
-            tabs: tabs.sort((first, second) =>
-                Number(second.active) - Number(first.active)
-                || Number(second.pinned) - Number(first.pinned)
-                || first.index - second.index
-            )
+            tabs: tabs.sort(
+                (first, second) =>
+                    Number(second.active) - Number(first.active)
+                    || Number(second.pinned) - Number(first.pinned)
+                    || first.index - second.index,
+            ),
         }));
 }
 

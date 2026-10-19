@@ -7,8 +7,13 @@ export function is_about_tab(tab: ManagedTab) {
 }
 
 export function can_unload(tab: ManagedTab) {
-    return tab.id != null && Boolean(tab.url) && !is_about_tab(tab)
-        && !tab.active && !tab.discarded;
+    return (
+        tab.id != null
+        && Boolean(tab.url)
+        && !is_about_tab(tab)
+        && !tab.active
+        && !tab.discarded
+    );
 }
 
 export const last_active = new Map<number, number>();
@@ -40,9 +45,8 @@ export async function unload_inactive() {
         return;
     }
 
-    const threshold = Math.max(
-        1, Number(current_settings.inactivityMinutes) || 30
-    ) * 60_000;
+    const threshold =
+        Math.max(1, Number(current_settings.inactivityMinutes) || 30) * 60_000;
     const now = Date.now();
     const tabs = await query_tabs();
     const candidates = [];

@@ -15,7 +15,7 @@ export function render_settings(settings: Settings) {
         settings.managerDisplay || "window";
     $<HTMLInputElement>("#auto-unload").checked = Boolean(settings.autoUnload);
     $<HTMLInputElement>("#inactivity-minutes").value = String(
-        settings.inactivityMinutes || 30
+        settings.inactivityMinutes || 30,
     );
 }
 
@@ -35,10 +35,7 @@ export function setup_settings(show_toast: (text: string) => void) {
 
     $("#save-settings").addEventListener("click", async () => {
         const input = $<HTMLInputElement>("#inactivity-minutes");
-        const minutes = Math.max(
-            1,
-            Math.min(10080, Number(input.value) || 30)
-        );
+        const minutes = Math.max(1, Math.min(10080, Number(input.value) || 30));
         $<HTMLInputElement>("#inactivity-minutes").value = String(minutes);
 
         try {
@@ -51,8 +48,10 @@ export function setup_settings(show_toast: (text: string) => void) {
                     inactivityMinutes: minutes,
                     managerDisplay:
                         $<HTMLSelectElement>("#manager-display").value
-                            === "overlay" ? "overlay" : "window"
-                }
+                        === "overlay"
+                            ? "overlay"
+                            : "window",
+                },
             });
             render_settings(result.settings);
             $("#settings-status").textContent = "Saved";
@@ -67,7 +66,9 @@ export function setup_settings(show_toast: (text: string) => void) {
 }
 
 function setup_shortcut(
-    command_name: string, field: string, default_shortcut: string
+    command_name: string,
+    field: string,
+    default_shortcut: string,
 ) {
     const prefix = field === "manager" ? "" : `${field}-`;
     const input = $<HTMLInputElement>(`#${field}-shortcut`);
@@ -76,7 +77,7 @@ function setup_shortcut(
     const clear = $<HTMLButtonElement>(`#${prefix}clear-shortcut`);
     let is_mac = false;
 
-    input.addEventListener("keydown", event => {
+    input.addEventListener("keydown", (event) => {
         // Keep keyboard navigation available without recording it.
         if (event.key === "Tab") return;
         event.preventDefault();
@@ -85,11 +86,20 @@ function setup_shortcut(
             input.blur();
             return;
         }
-        if (["Control", "Alt", "Meta", "Shift"].includes(event.key)) return;
+        if (
+            [
+                "Control",
+                "Alt",
+                "Meta",
+                "Shift",
+            ].includes(event.key)
+        )
+            return;
 
         const shortcut = recorded_shortcut(event, is_mac);
         if (shortcut === null) {
-            status.textContent = "Use Ctrl, Alt, or Command with a key, "
+            status.textContent =
+                "Use Ctrl, Alt, or Command with a key, "
                 + "and at most two modifiers.";
             return;
         }
@@ -106,12 +116,11 @@ function setup_shortcut(
         try {
             // Read Firefox's binding, including changes from about:addons.
             const [commands, platform] = await Promise.all([
-                browser.commands.getAll(), browser.runtime.getPlatformInfo()
+                browser.commands.getAll(),
+                browser.runtime.getPlatformInfo(),
             ]);
             is_mac = platform.os === "mac";
-            const command = commands.find(item =>
-                item.name === command_name
-            );
+            const command = commands.find((item) => item.name === command_name);
             if (!command) {
                 throw new Error("Manager shortcut is unavailable.");
             }
@@ -120,12 +129,13 @@ function setup_shortcut(
             button.disabled = false;
             clear.disabled = false;
         } catch {
-            status.textContent = "Could not load this shortcut. "
+            status.textContent =
+                "Could not load this shortcut. "
                 + "Check Firefox’s Manage Extension Shortcuts page.";
         }
     }
 
-    $(`#${prefix}shortcut-form`).addEventListener("submit", async event => {
+    $(`#${prefix}shortcut-form`).addEventListener("submit", async (event) => {
         event.preventDefault();
         button.disabled = true;
         status.textContent = "";
@@ -133,14 +143,17 @@ function setup_shortcut(
         try {
             await browser.commands.update({
                 name: command_name,
-                shortcut: input.value.trim()
+                shortcut: input.value.trim(),
             });
             await load_shortcut();
             status.textContent = input.value
-                ? "Shortcut saved." : "Shortcut disabled.";
+                ? "Shortcut saved."
+                : "Shortcut disabled.";
         } catch {
-            status.textContent = "Could not set shortcut. Try "
-                + default_shortcut + " or another valid combination.";
+            status.textContent =
+                "Could not set shortcut. Try "
+                + default_shortcut
+                + " or another valid combination.";
         } finally {
             button.disabled = false;
         }

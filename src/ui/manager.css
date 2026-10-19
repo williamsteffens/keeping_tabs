@@ -11,7 +11,11 @@
     --danger-soft: #fff0ee;
     --green: #18794e;
     --primary: #315fce;
-    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    font:
+        14px/1.45 system-ui,
+        -apple-system,
+        "Segoe UI",
+        sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -53,11 +57,12 @@
 * {
     box-sizing: border-box;
     scrollbar-width: thin;
-    scrollbar-color:
-        color-mix(in srgb, var(--muted) 55%, transparent) transparent;
+    scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent)
+        transparent;
 }
 
-html, body {
+html,
+body {
     height: 100%;
     overflow: hidden;
 }
@@ -212,7 +217,10 @@ body {
     overflow: hidden;
 }
 
-.command-input-wrap, .picker-filters, .palette-footer, #command-empty {
+.command-input-wrap,
+.picker-filters,
+.palette-footer,
+#command-empty {
     flex-shrink: 0;
 }
 
@@ -237,7 +245,7 @@ body {
 }
 
 .command-row[aria-disabled="true"] {
-    opacity: .5;
+    opacity: 0.5;
     cursor: wait;
 }
 
@@ -255,7 +263,8 @@ body {
     min-width: 0;
 }
 
-.command-title, .command-description {
+.command-title,
+.command-description {
     display: block;
 }
 
@@ -330,18 +339,21 @@ kbd {
     outline-offset: 3px;
 }
 
-h1, h2, h3, p {
+h1,
+h2,
+h3,
+p {
     margin: 0;
 }
 
 h1 {
     font-size: 20px;
-    letter-spacing: -.3px;
+    letter-spacing: -0.3px;
 }
 
 h2 {
     font-size: 22px;
-    letter-spacing: -.4px;
+    letter-spacing: -0.4px;
 }
 
 h3 {
@@ -378,7 +390,7 @@ h3 {
 }
 
 .button:disabled {
-    opacity: .45;
+    opacity: 0.45;
     cursor: not-allowed;
 }
 
@@ -432,23 +444,26 @@ h3 {
     cursor: pointer;
 }
 
-input[type=checkbox] {
+input[type="checkbox"] {
     width: 16px;
     height: 16px;
     accent-color: var(--accent);
 }
 
-.muted, small {
+.muted,
+small {
     color: var(--muted);
 }
 
-.group-list, .tab-list {
+.group-list,
+.tab-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.group-card, .panel {
+.group-card,
+.panel {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -606,8 +621,8 @@ input[type=checkbox] {
     gap: 3px;
 }
 
-input[type=number],
-input[type=text],
+input[type="number"],
+input[type="text"],
 select {
     padding: 7px;
     border: 1px solid var(--border);
@@ -616,7 +631,7 @@ select {
     color: var(--text);
 }
 
-input[type=number] {
+input[type="number"] {
     width: 86px;
 }
 
@@ -704,7 +719,7 @@ dialog p {
     border-radius: 9px;
     background: var(--text);
     color: var(--surface);
-    transition: .2s;
+    transition: 0.2s;
     box-shadow: 0 6px 24px #0002;
 }
 
@@ -749,7 +764,8 @@ dialog p {
         padding: 10px;
     }
 
-    .bottom-actions, .setting-row {
+    .bottom-actions,
+    .setting-row {
         align-items: flex-start;
         flex-direction: column;
     }
@@ -797,7 +813,8 @@ dialog p {
     padding: 0 18px 12px;
 }
 
-.picker-status, .picker-window-filters {
+.picker-status,
+.picker-window-filters {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -815,7 +832,7 @@ dialog p {
     cursor: pointer;
 }
 
-.picker-status button[aria-pressed=true] {
+.picker-status button[aria-pressed="true"] {
     background: var(--accent-soft);
     color: var(--accent);
     border-color: var(--accent);
@@ -841,7 +858,8 @@ dialog p {
     font-size: 11px;
 }
 
-.picker-row .command-title, .picker-row .command-description {
+.picker-row .command-title,
+.picker-row .command-description {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;

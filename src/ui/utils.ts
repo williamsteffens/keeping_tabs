@@ -19,11 +19,12 @@ export function escape_html(text: unknown) {
         "<": "&lt;",
         ">": "&gt;",
         '"': "&quot;",
-        "'": "&#39;"
+        "'": "&#39;",
     };
 
     return String(text ?? "").replace(
-        /[&<>"']/g, character => entities[character]
+        /[&<>"']/g,
+        (character) => entities[character],
     );
 }
 

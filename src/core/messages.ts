@@ -1,4 +1,7 @@
-import type { ManagedTab, Settings } from "./types.ts";
+import type {
+    ManagedTab,
+    Settings,
+} from "./types.ts";
 
 interface MessageMap {
     activateTab: {
@@ -40,19 +43,29 @@ export function is_manager_message(value: unknown): value is ManagerMessage {
         case "unloadAll":
             return true;
         case "activateTab":
-            return "tabId" in value && Number.isInteger(value.tabId)
-                && Number(value.tabId) >= 0;
+            return (
+                "tabId" in value
+                && Number.isInteger(value.tabId)
+                && Number(value.tabId) >= 0
+            );
         case "unloadSelected":
         case "closeSelected":
-            return "tabIds" in value && Array.isArray(value.tabIds)
-                && value.tabIds.every(id => Number.isInteger(id));
+            return (
+                "tabIds" in value
+                && Array.isArray(value.tabIds)
+                && value.tabIds.every((id) => Number.isInteger(id))
+            );
         case "saveSettings": {
-            if (!("settings" in value) || !value.settings
-                || typeof value.settings !== "object") {
+            if (
+                !("settings" in value)
+                || !value.settings
+                || typeof value.settings !== "object"
+            ) {
                 return false;
             }
             const settings = value.settings;
-            return "autoUnload" in settings
+            return (
+                "autoUnload" in settings
                 && typeof settings.autoUnload === "boolean"
                 && "inactivityMinutes" in settings
                 && typeof settings.inactivityMinutes === "number"
@@ -62,7 +75,8 @@ export function is_manager_message(value: unknown): value is ManagerMessage {
                     || settings.theme === "dark")
                 && (!("managerDisplay" in settings)
                     || settings.managerDisplay === "window"
-                    || settings.managerDisplay === "overlay");
+                    || settings.managerDisplay === "overlay")
+            );
         }
         default:
             return false;
@@ -70,7 +84,7 @@ export function is_manager_message(value: unknown): value is ManagerMessage {
 }
 
 export async function send_message<A extends Action>(
-    message: MessageMap[A]["request"] & { action: A }
+    message: MessageMap[A]["request"] & { action: A },
 ): Promise<MessageMap[A]["response"]> {
     return browser.runtime.sendMessage(message);
 }

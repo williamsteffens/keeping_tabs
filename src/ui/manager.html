@@ -1,337 +1,449 @@
 <!doctype html>
 <html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Keeping Tabs</title>
+        <link rel="stylesheet" href="manager.css" />
+        <script type="module" src="manager.ts"></script>
+    </head>
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Keeping Tabs</title>
-    <link rel="stylesheet" href="manager.css">
-    <script type="module" src="manager.ts"></script>
-</head>
-
-<body>
-    <main id="manager" class="manager">
-        <header class="palette-header">
-            <button id="back" class="button quiet hidden"
-                aria-label="Back to commands">←</button>
-            <h1 id="manager-title">Keeping Tabs</h1>
-            <span id="tab-summary" class="muted" role="status">
-                Loading tabs…
-            </span>
-            <button id="toggle-picker" class="button quiet" type="button"
-                title="Search open tabs (Alt+K)">Tabs</button>
-            <button id="open-settings" class="button quiet icon-button"
-                type="button" aria-label="Settings" title="Settings"
-                aria-controls="view-settings">
-                <svg width="18" height="18" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="1.7"
-                    stroke-linecap="round" stroke-linejoin="round"
-                    aria-hidden="true" focusable="false">
-                    <path d="m9 3-.6 3-2.6 1.5L3 6.5 1.5 9l2.2 2
+    <body>
+        <main id="manager" class="manager">
+            <header class="palette-header">
+                <button
+                    id="back"
+                    class="button quiet hidden"
+                    aria-label="Back to commands"
+                    >←</button
+                >
+                <h1 id="manager-title">Keeping Tabs</h1>
+                <span id="tab-summary" class="muted" role="status">
+                    Loading tabs…
+                </span>
+                <button
+                    id="toggle-picker"
+                    class="button quiet"
+                    type="button"
+                    title="Search open tabs (Alt+K)"
+                    >Tabs</button
+                >
+                <button
+                    id="open-settings"
+                    class="button quiet icon-button"
+                    type="button"
+                    aria-label="Settings"
+                    title="Settings"
+                    aria-controls="view-settings"
+                >
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                        focusable="false"
+                    >
+                        <path
+                            d="m9 3-.6 3-2.6 1.5L3 6.5 1.5 9l2.2 2
                         v3L1.5 16 3 18.5l2.8-1L8.4 19l.6 3h6l.6-3
                         2.6-1.5 2.8 1 1.5-2.5-2.2-2v-3l2.2-2L21 6.5
-                        l-2.8 1L15.6 6 15 3Z"/>
-                    <circle cx="12" cy="12.5" r="3.5"/>
-                </svg>
-            </button>
-        </header>
-        <section id="view-commands" class="view">
-            <div class="command-input-wrap">
-                <span id="command-prompt" class="command-prompt"
-                    aria-hidden="true">&gt;</span>
-                <input id="command-search" type="text" role="combobox"
-                    aria-label="Search commands" aria-autocomplete="list"
-                    aria-expanded="true" aria-controls="command-list"
-                    aria-describedby="command-help" autocomplete="off"
-                    spellcheck="false" placeholder="Type a command…"
-                    autofocus>
-            </div>
-            <div id="picker-filters" class="picker-filters hidden">
-                <div id="picker-status" class="picker-status"
-                    role="group" aria-label="Filter tabs by activity">
-                    <button type="button" data-tab-status="all"
-                        aria-pressed="true">All <span class="status-count">
-                        0</span></button>
-                    <button type="button" data-tab-status="active"
-                        aria-pressed="false">Active <span class="status-count">
-                        0</span></button>
-                    <button type="button" data-tab-status="inactive"
-                        aria-pressed="false">Inactive
-                        <span class="status-count">
-                        0</span></button>
-                    <button type="button" data-tab-status="unloaded"
-                        aria-pressed="false">Unloaded
-                        <span class="status-count">
-                        0</span></button>
-                </div>
-                <div class="picker-window-filters">
-                    <select id="picker-window" aria-label="Filter by window">
-                        <option value="all">All windows</option>
-                    </select>
-                    <label class="check-label">
-                        <input id="picker-grouped" type="checkbox" checked>
-                        Group by window
-                    </label>
-                </div>
-            </div>
-            <div id="command-list" role="listbox"
-                aria-label="Commands"></div>
-            <div id="command-empty" class="empty hidden" role="status">
-                No matching commands. Try “unload” or “duplicates”.
-            </div>
-            <footer id="command-help" class="palette-footer">
-                <a id="support-link" class="support-link"
-                    href="https://williamsteffens.dev"
-                    target="_blank" rel="noopener noreferrer">
-                    <span aria-hidden="true">☕</span> Support me
-                </a>
-                <a id="support-link" class="support-link"
-                    href="https://github.com/williamsteffens/keeping_tabs"
-                    target="_blank" rel="noopener noreferrer">
-                    <span aria-hidden="true">🐙</span> Github
-                </a>
-                <a id="support-link" class="support-link"
-                    href="https://williamsteffens.dev"
-                    target="_blank" rel="noopener noreferrer">
-                    <span aria-hidden="true">🌐</span> My website
-                </a>
-                <div class="keyboard-hints">
-                    <span><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span>
-                    <span><kbd>Enter</kbd>
-                        <span id="enter-hint">to run</span></span>
-                    <span><kbd>Esc</kbd> to close</span>
-                </div>
-            </footer>
-        </section>
-        <section id="view-duplicates" class="view hidden">
-            <div class="section-heading">
-                <div>
-                    <h2>Duplicate tabs</h2>
-                    <p>
-                        Matching URLs are grouped across all open windows.
-                        URL fragments (#…) are ignored; query parameters are
-                        kept.
-                    </p>
-                </div>
-                <button id="scan" class="button secondary">
-                    Scan again
+                        l-2.8 1L15.6 6 15 3Z"
+                        />
+                        <circle cx="12" cy="12.5" r="3.5" />
+                    </svg>
                 </button>
-            </div>
-            <div id="duplicate-summary" class="summary"></div>
-            <div class="toolbar">
-                <label class="check-label">
-                    <input id="select-removable" type="checkbox">
-                    Select safe-to-close copies
-                </label>
-                <span class="muted" id="selected-count">0 selected</span>
-            </div>
-            <div id="duplicate-list" class="group-list"></div>
-            <div class="bottom-actions">
-                <span id="close-note" class="muted">
-                    Active and pinned tabs are not selected by default.
-                </span>
-                <button id="review-close" class="button primary" disabled>
-                    Review &amp; close…
-                </button>
-            </div>
-        </section>
-        <section id="view-unload" class="view hidden">
-            <div class="section-heading">
-                <div>
-                    <h2>Choose tabs to unload</h2>
-                    <p>
-                        Discard tabs to reduce memory use. They stay in the
-                        tab strip and reload when opened.
-                    </p>
+            </header>
+            <section id="view-commands" class="view">
+                <div class="command-input-wrap">
+                    <span
+                        id="command-prompt"
+                        class="command-prompt"
+                        aria-hidden="true"
+                        >&gt;</span
+                    >
+                    <input
+                        id="command-search"
+                        type="text"
+                        role="combobox"
+                        aria-label="Search commands"
+                        aria-autocomplete="list"
+                        aria-expanded="true"
+                        aria-controls="command-list"
+                        aria-describedby="command-help"
+                        autocomplete="off"
+                        spellcheck="false"
+                        placeholder="Type a command…"
+                        autofocus
+                    />
                 </div>
-            </div>
-            <div class="metric-grid">
-                <div class="metric">
-                    <span>Ready to unload</span>
-                    <strong id="loaded-count">—</strong>
+                <div id="picker-filters" class="picker-filters hidden">
+                    <div
+                        id="picker-status"
+                        class="picker-status"
+                        role="group"
+                        aria-label="Filter tabs by activity"
+                    >
+                        <button
+                            type="button"
+                            data-tab-status="all"
+                            aria-pressed="true"
+                            >All <span class="status-count"> 0</span></button
+                        >
+                        <button
+                            type="button"
+                            data-tab-status="active"
+                            aria-pressed="false"
+                            >Active <span class="status-count"> 0</span></button
+                        >
+                        <button
+                            type="button"
+                            data-tab-status="inactive"
+                            aria-pressed="false"
+                            >Inactive
+                            <span class="status-count"> 0</span></button
+                        >
+                        <button
+                            type="button"
+                            data-tab-status="unloaded"
+                            aria-pressed="false"
+                            >Unloaded
+                            <span class="status-count"> 0</span></button
+                        >
+                    </div>
+                    <div class="picker-window-filters">
+                        <select
+                            id="picker-window"
+                            aria-label="Filter by window"
+                        >
+                            <option value="all">All windows</option>
+                        </select>
+                        <label class="check-label">
+                            <input
+                                id="picker-grouped"
+                                type="checkbox"
+                                checked
+                            />
+                            Group by window
+                        </label>
+                    </div>
                 </div>
-                <div class="metric">
-                    <span>Unloaded tabs</span>
-                    <strong id="unloaded-count">—</strong>
+                <div
+                    id="command-list"
+                    role="listbox"
+                    aria-label="Commands"
+                ></div>
+                <div id="command-empty" class="empty hidden" role="status">
+                    No matching commands. Try “unload” or “duplicates”.
                 </div>
-                <div class="metric">
-                    <span>Windows</span>
-                    <strong id="window-count">—</strong>
-                </div>
-            </div>
-            <div class="panel">
-                <h3>Choose tabs to unload</h3>
-                <div class="toolbar">
-                    <label class="check-label">
-                        <input id="select-loaded" type="checkbox">
-                        Select eligible loaded tabs
-                    </label>
-                    <span id="unload-selected-count" class="muted">
-                        0 selected
-                    </span>
-                </div>
-                <div id="unload-list" class="tab-list"></div>
-                <div class="bottom-actions">
-                    <span class="muted">
-                        Active tabs and Firefox about: pages are excluded.
-                    </span>
-                    <button id="unload-selected" class="button secondary" disabled>
-                        Unload selected
+                <footer id="command-help" class="palette-footer">
+                    <a
+                        id="support-link"
+                        class="support-link"
+                        href="https://williamsteffens.dev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <span aria-hidden="true">☕</span> Support me
+                    </a>
+                    <a
+                        id="support-link"
+                        class="support-link"
+                        href="https://github.com/williamsteffens/keeping_tabs"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <span aria-hidden="true">🐙</span> Github
+                    </a>
+                    <a
+                        id="support-link"
+                        class="support-link"
+                        href="https://williamsteffens.dev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <span aria-hidden="true">🌐</span> My website
+                    </a>
+                    <div class="keyboard-hints">
+                        <span><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span>
+                        <span
+                            ><kbd>Enter</kbd>
+                            <span id="enter-hint">to run</span></span
+                        >
+                        <span><kbd>Esc</kbd> to close</span>
+                    </div>
+                </footer>
+            </section>
+            <section id="view-duplicates" class="view hidden">
+                <div class="section-heading">
+                    <div>
+                        <h2>Duplicate tabs</h2>
+                        <p>
+                            Matching URLs are grouped across all open windows.
+                            URL fragments (#…) are ignored; query parameters are
+                            kept.
+                        </p>
+                    </div>
+                    <button id="scan" class="button secondary">
+                        Scan again
                     </button>
                 </div>
-            </div>
-        </section>
-        <section id="view-settings" class="view hidden">
-            <div class="section-heading">
-                <div>
-                    <h2>Settings</h2>
-                    <p>Configure appearance, unloading, and shortcuts.</p>
+                <div id="duplicate-summary" class="summary"></div>
+                <div class="toolbar">
+                    <label class="check-label">
+                        <input id="select-removable" type="checkbox" />
+                        Select safe-to-close copies
+                    </label>
+                    <span class="muted" id="selected-count">0 selected</span>
                 </div>
-            </div>
-            <div class="panel settings-panel">
-                <label class="setting-row" for="theme">
-                    <span>
-                        <strong>Appearance</strong>
-                        <small>
-                            Choose a theme or follow your system setting.
-                        </small>
+                <div id="duplicate-list" class="group-list"></div>
+                <div class="bottom-actions">
+                    <span id="close-note" class="muted">
+                        Active and pinned tabs are not selected by default.
                     </span>
-                    <select id="theme">
-                        <option value="system">System</option>
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
-                    </select>
-                </label>
-                <label class="setting-row" for="manager-display">
-                    <span>
-                        <strong>Open manager as</strong>
-                        <small>
-                            Overlay the current page or open a separate window.
-                            Firefox pages use a separate window.
-                        </small>
+                    <button id="review-close" class="button primary" disabled>
+                        Review &amp; close…
+                    </button>
+                </div>
+            </section>
+            <section id="view-unload" class="view hidden">
+                <div class="section-heading">
+                    <div>
+                        <h2>Choose tabs to unload</h2>
+                        <p>
+                            Discard tabs to reduce memory use. They stay in the
+                            tab strip and reload when opened.
+                        </p>
+                    </div>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric">
+                        <span>Ready to unload</span>
+                        <strong id="loaded-count">—</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Unloaded tabs</span>
+                        <strong id="unloaded-count">—</strong>
+                    </div>
+                    <div class="metric">
+                        <span>Windows</span>
+                        <strong id="window-count">—</strong>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h3>Choose tabs to unload</h3>
+                    <div class="toolbar">
+                        <label class="check-label">
+                            <input id="select-loaded" type="checkbox" />
+                            Select eligible loaded tabs
+                        </label>
+                        <span id="unload-selected-count" class="muted">
+                            0 selected
+                        </span>
+                    </div>
+                    <div id="unload-list" class="tab-list"></div>
+                    <div class="bottom-actions">
+                        <span class="muted">
+                            Active tabs and Firefox about: pages are excluded.
+                        </span>
+                        <button
+                            id="unload-selected"
+                            class="button secondary"
+                            disabled
+                        >
+                            Unload selected
+                        </button>
+                    </div>
+                </div>
+            </section>
+            <section id="view-settings" class="view hidden">
+                <div class="section-heading">
+                    <div>
+                        <h2>Settings</h2>
+                        <p>Configure appearance, unloading, and shortcuts.</p>
+                    </div>
+                </div>
+                <div class="panel settings-panel">
+                    <label class="setting-row" for="theme">
+                        <span>
+                            <strong>Appearance</strong>
+                            <small>
+                                Choose a theme or follow your system setting.
+                            </small>
+                        </span>
+                        <select id="theme">
+                            <option value="system">System</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </label>
+                    <label class="setting-row" for="manager-display">
+                        <span>
+                            <strong>Open manager as</strong>
+                            <small>
+                                Overlay the current page or open a separate
+                                window. Firefox pages use a separate window.
+                            </small>
+                        </span>
+                        <select id="manager-display">
+                            <option value="window">Separate window</option>
+                            <option value="overlay">Page overlay</option>
+                        </select>
+                    </label>
+                    <label class="setting-row">
+                        <span>
+                            <strong>Automatically unload inactive tabs</strong>
+                            <small>
+                                Check once per minute and discard tabs that
+                                exceed the threshold.
+                            </small>
+                        </span>
+                        <input id="auto-unload" type="checkbox" />
+                    </label>
+                    <label class="setting-row">
+                        <span>
+                            <strong>Inactivity threshold</strong>
+                            <small>
+                                How long a tab must remain inactive before
+                                unloading.
+                            </small>
+                        </span>
+                        <span>
+                            <input
+                                id="inactivity-minutes"
+                                type="number"
+                                min="1"
+                                max="10080"
+                                value="30"
+                            />
+                            min
+                        </span>
+                    </label>
+                    <button id="save-settings" class="button primary">
+                        Save settings
+                    </button>
+                    <span id="settings-status" class="muted" role="status">
                     </span>
-                    <select id="manager-display">
-                        <option value="window">Separate window</option>
-                        <option value="overlay">Page overlay</option>
-                    </select>
-                </label>
-                <label class="setting-row">
-                    <span>
-                        <strong>Automatically unload inactive tabs</strong>
-                        <small>
-                            Check once per minute and discard tabs that
-                            exceed the threshold.
-                        </small>
+                </div>
+                <form id="shortcut-form" class="panel settings-panel">
+                    <label class="setting-row" for="manager-shortcut">
+                        <span>
+                            <strong>Open manager shortcut</strong>
+                            <small id="shortcut-help">
+                                Focus the field and press your shortcut keys.
+                                Click Clear to disable, then Save shortcut.
+                            </small>
+                        </span>
+                        <input
+                            id="manager-shortcut"
+                            type="text"
+                            aria-describedby="shortcut-help"
+                            autocomplete="off"
+                            spellcheck="false"
+                            placeholder="Press shortcut keys"
+                            readonly
+                            disabled
+                        />
+                    </label>
+                    <button
+                        id="clear-shortcut"
+                        type="button"
+                        class="button secondary"
+                        disabled
+                    >
+                        Clear
+                    </button>
+                    <button
+                        id="save-shortcut"
+                        type="submit"
+                        class="button primary"
+                        disabled
+                    >
+                        Save shortcut
+                    </button>
+                    <span id="shortcut-status" class="muted" role="status">
                     </span>
-                    <input id="auto-unload" type="checkbox">
-                </label>
-                <label class="setting-row">
-                    <span>
-                        <strong>Inactivity threshold</strong>
-                        <small>
-                            How long a tab must remain inactive before
-                            unloading.
-                        </small>
+                </form>
+                <form id="picker-shortcut-form" class="panel settings-panel">
+                    <label class="setting-row" for="picker-shortcut">
+                        <span>
+                            <strong>Tab picker shortcut</strong>
+                            <small id="picker-shortcut-help">
+                                Focus the field and press your shortcut keys.
+                                Click Clear to disable, then Save shortcut.
+                            </small>
+                        </span>
+                        <input
+                            id="picker-shortcut"
+                            type="text"
+                            aria-describedby="picker-shortcut-help"
+                            autocomplete="off"
+                            spellcheck="false"
+                            placeholder="Press shortcut keys"
+                            readonly
+                            disabled
+                        />
+                    </label>
+                    <button
+                        id="picker-clear-shortcut"
+                        type="button"
+                        class="button secondary"
+                        disabled
+                    >
+                        Clear
+                    </button>
+                    <button
+                        id="picker-save-shortcut"
+                        type="submit"
+                        class="button primary"
+                        disabled
+                    >
+                        Save shortcut
+                    </button>
+                    <span
+                        id="picker-shortcut-status"
+                        class="muted"
+                        role="status"
+                    >
                     </span>
-                    <span>
-                        <input id="inactivity-minutes" type="number" min="1" max="10080" value="30">
-                        min
-                    </span>
-                </label>
-                <button id="save-settings" class="button primary">
-                    Save settings
-                </button>
-                <span id="settings-status" class="muted" role="status">
-                </span>
-            </div>
-            <form id="shortcut-form" class="panel settings-panel">
-                <label class="setting-row" for="manager-shortcut">
-                    <span>
-                        <strong>Open manager shortcut</strong>
-                        <small id="shortcut-help">
-                            Focus the field and press your shortcut keys.
-                            Click Clear to disable, then Save shortcut.
-                        </small>
-                    </span>
-                    <input 
-                        id="manager-shortcut"
-                        type="text"
-                        aria-describedby="shortcut-help"
-                        autocomplete="off"
-                        spellcheck="false"
-                        placeholder="Press shortcut keys"
-                        readonly disabled>
-                </label>
-                <button id="clear-shortcut" type="button"
-                    class="button secondary" disabled>
-                    Clear
-                </button>
-                <button id="save-shortcut" type="submit"
-                    class="button primary" disabled>
-                    Save shortcut
-                </button>
-                <span id="shortcut-status" class="muted" role="status">
-                </span>
+                </form>
+                <div class="notice">
+                    <strong>Tab picker:</strong> Alt+K opens search for all
+                    tabs. Set the binding above, or use Firefox’s Manage
+                    Extension Shortcuts page if another binding conflicts.
+                </div>
+                <div class="notice">
+                    <strong>Privacy:</strong>
+                    tab titles and URLs are read locally by the extension to
+                    group duplicates. No data is sent anywhere.
+                </div>
+            </section>
+        </main>
+        <dialog id="confirm-dialog">
+            <form method="dialog" id="confirm-form">
+                <h2>Close selected tabs?</h2>
+                <p id="confirm-message">
+                    Review the number of tabs before closing.
+                </p>
+                <div id="confirm-preview" class="confirm-preview"></div>
+                <div class="dialog-actions">
+                    <button value="cancel" class="button secondary">
+                        Cancel
+                    </button>
+                    <button
+                        id="confirm-close"
+                        value="confirm"
+                        class="button danger"
+                    >
+                        Close tabs
+                    </button>
+                </div>
             </form>
-            <form id="picker-shortcut-form" class="panel settings-panel">
-                <label class="setting-row" for="picker-shortcut">
-                    <span>
-                        <strong>Tab picker shortcut</strong>
-                        <small id="picker-shortcut-help">
-                            Focus the field and press your shortcut keys.
-                            Click Clear to disable, then Save shortcut.
-                        </small>
-                    </span>
-                    <input 
-                        id="picker-shortcut"
-                        type="text"
-                        aria-describedby="picker-shortcut-help"
-                        autocomplete="off"
-                        spellcheck="false"
-                        placeholder="Press shortcut keys"
-                        readonly disabled>
-                </label>
-                <button id="picker-clear-shortcut" type="button"
-                    class="button secondary" disabled>
-                    Clear
-                </button>
-                <button id="picker-save-shortcut" type="submit"
-                    class="button primary" disabled>
-                    Save shortcut
-                </button>
-                <span id="picker-shortcut-status" class="muted" role="status">
-                </span>
-            </form>
-            <div class="notice">
-                <strong>Tab picker:</strong> Alt+K opens search for all tabs.
-                Set the binding above, or use Firefox’s
-                Manage Extension Shortcuts page if another binding conflicts.
-            </div>
-            <div class="notice">
-                <strong>Privacy:</strong>
-                tab titles and URLs are read locally by the extension to
-                group duplicates. No data is sent anywhere.
-            </div>
-        </section>
-    </main>
-    <dialog id="confirm-dialog">
-        <form method="dialog" id="confirm-form">
-            <h2>Close selected tabs?</h2>
-            <p id="confirm-message">
-                Review the number of tabs before closing.
-            </p>
-            <div id="confirm-preview" class="confirm-preview"></div>
-            <div class="dialog-actions">
-                <button value="cancel" class="button secondary">
-                    Cancel
-                </button>
-                <button id="confirm-close" value="confirm" class="button danger">
-                    Close tabs
-                </button>
-            </div>
-        </form>
-    </dialog>
-    <div id="toast" class="toast" role="status" aria-live="polite"></div>
-</body>
-
+        </dialog>
+        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </body>
 </html>

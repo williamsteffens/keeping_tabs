@@ -1,16 +1,23 @@
 // This function is serialized into the active tab; keep it self-contained.
 export async function toggle_manager_overlay(manager_url: string) {
-    const requested_mode = new URL(manager_url).searchParams.get("mode")
-        === "tabs" ? "tabs" : "commands";
+    const requested_mode =
+        new URL(manager_url).searchParams.get("mode") === "tabs"
+            ? "tabs"
+            : "commands";
     const host_id = "keeping-tabs-manager-overlay";
     const existing = document.getElementById(host_id);
     if (existing) {
         if (existing.dataset.mode !== requested_mode) {
             existing.dataset.mode = requested_mode;
-            existing.shadowRoot?.querySelector("iframe")?.contentWindow
-                ?.postMessage({
-                    type: "keeping-tabs-mode", mode: requested_mode
-                }, new URL(manager_url).origin);
+            existing.shadowRoot
+                ?.querySelector("iframe")
+                ?.contentWindow?.postMessage(
+                    {
+                        type: "keeping-tabs-mode",
+                        mode: requested_mode,
+                    },
+                    new URL(manager_url).origin,
+                );
         } else {
             existing.shadowRoot?.querySelector("dialog")?.close();
         }
@@ -77,7 +84,7 @@ export async function toggle_manager_overlay(manager_url: string) {
     close.textContent = "Close ×";
     close.type = "button";
     close.addEventListener("click", () => dialog.close());
-    dialog.addEventListener("click", event => {
+    dialog.addEventListener("click", (event) => {
         if (event.target === dialog) dialog.close();
     });
 
@@ -92,23 +99,34 @@ export async function toggle_manager_overlay(manager_url: string) {
 
     let expanded = false;
     const on_message = (event: MessageEvent) => {
-        if (event.source === frame.contentWindow
-            && event.origin === new URL(manager_url).origin) {
+        if (
+            event.source === frame.contentWindow
+            && event.origin === new URL(manager_url).origin
+        ) {
             if (event.data === "keeping-tabs-ready") mark_ready();
             if (event.data === "keeping-tabs-close") dialog.close();
-            if (event.data?.type === "keeping-tabs-palette"
-                && ["commands", "tabs"].includes(event.data.mode)) {
+            if (
+                event.data?.type === "keeping-tabs-palette"
+                && [
+                    "commands",
+                    "tabs",
+                ].includes(event.data.mode)
+            ) {
                 host.dataset.mode = event.data.mode;
             }
-            if (event.data?.type === "keeping-tabs-view"
-                && typeof event.data.expanded === "boolean") {
+            if (
+                event.data?.type === "keeping-tabs-view"
+                && typeof event.data.expanded === "boolean"
+            ) {
                 expanded = event.data.expanded;
-                frame.style.height = expanded
-                    ? "100%" : "min(470px, 100%)";
+                frame.style.height = expanded ? "100%" : "min(470px, 100%)";
             }
-            if (event.data?.type === "keeping-tabs-size" && !expanded
+            if (
+                event.data?.type === "keeping-tabs-size"
+                && !expanded
                 && Number.isFinite(event.data.height)
-                && event.data.height > 0) {
+                && event.data.height > 0
+            ) {
                 const height = Math.ceil(event.data.height);
                 frame.style.height = `min(${height}px, 100%)`;
             }
@@ -116,13 +134,39 @@ export async function toggle_manager_overlay(manager_url: string) {
     };
 
     const input_events = [
-        "keydown", "keyup", "keypress", "beforeinput", "input",
-        "compositionstart", "compositionupdate", "compositionend",
-        "click", "dblclick", "auxclick", "contextmenu",
-        "pointerdown", "pointerup", "pointermove", "pointercancel",
-        "mousedown", "mouseup", "mousemove", "mouseover", "mouseout",
-        "touchstart", "touchmove", "touchend", "touchcancel", "wheel",
-        "copy", "cut", "paste", "dragstart", "dragover", "drop", "focusin"
+        "keydown",
+        "keyup",
+        "keypress",
+        "beforeinput",
+        "input",
+        "compositionstart",
+        "compositionupdate",
+        "compositionend",
+        "click",
+        "dblclick",
+        "auxclick",
+        "contextmenu",
+        "pointerdown",
+        "pointerup",
+        "pointermove",
+        "pointercancel",
+        "mousedown",
+        "mouseup",
+        "mousemove",
+        "mouseover",
+        "mouseout",
+        "touchstart",
+        "touchmove",
+        "touchend",
+        "touchcancel",
+        "wheel",
+        "copy",
+        "cut",
+        "paste",
+        "dragstart",
+        "dragover",
+        "drop",
+        "focusin",
     ];
     let input_locked = false;
     const page_style = document.documentElement.style;
@@ -145,8 +189,10 @@ export async function toggle_manager_overlay(manager_url: string) {
             if (event.key === "Tab" && path.includes(host)) return;
         }
         event.preventDefault();
-        if (event.type === "click"
-            && (path.includes(close) || path[0] === dialog)) {
+        if (
+            event.type === "click"
+            && (path.includes(close) || path[0] === dialog)
+        ) {
             dialog.close();
         }
     }
@@ -159,7 +205,8 @@ export async function toggle_manager_overlay(manager_url: string) {
         input_locked = true;
         for (const type of input_events) {
             window.addEventListener(type, swallow_input, {
-                capture: true, passive: false
+                capture: true,
+                passive: false,
             });
         }
     }
@@ -170,12 +217,14 @@ export async function toggle_manager_overlay(manager_url: string) {
             input_locked = false;
             for (const type of input_events) {
                 window.removeEventListener(type, swallow_input, {
-                    capture: true
+                    capture: true,
                 });
             }
             if (previous_overflow) {
                 page_style.setProperty(
-                    "overflow", previous_overflow, previous_priority
+                    "overflow",
+                    previous_overflow,
+                    previous_priority,
                 );
             } else {
                 page_style.removeProperty("overflow");
@@ -184,9 +233,13 @@ export async function toggle_manager_overlay(manager_url: string) {
         host.remove();
         previous_focus?.focus?.({ preventScroll: true });
     };
-    dialog.addEventListener("close", () => {
-        cleanup();
-    }, { once: true });
+    dialog.addEventListener(
+        "close",
+        () => {
+            cleanup();
+        },
+        { once: true },
+    );
     dialog.append(close, frame);
     shadow.append(style, dialog);
     window.addEventListener("message", on_message);
@@ -202,7 +255,8 @@ export async function toggle_manager_overlay(manager_url: string) {
         frame.focus();
         // The command field cannot receive focus while the frame is hidden.
         frame.contentWindow?.postMessage(
-            "keeping-tabs-focus-search", new URL(manager_url).origin
+            "keeping-tabs-focus-search",
+            new URL(manager_url).origin,
         );
     } catch (error) {
         cleanup();
