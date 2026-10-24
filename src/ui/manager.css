@@ -872,3 +872,18 @@ dialog p {
     gap: 4px;
     max-width: 160px;
 }
+
+#closed-preview {
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+}
+
+#closed-preview-tabs {
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.closed-preview-tab {
+    padding: 6px 0;
+    overflow-wrap: anywhere;
+}

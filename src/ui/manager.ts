@@ -1,3 +1,4 @@
+import { setup_closed_picker } from "./closed-picker.ts";
 import { setup_tab_picker } from "./tab-picker.ts";
 import {
     can_unload,
@@ -98,6 +99,13 @@ const tab_picker = setup_tab_picker(
     close_manager,
     show_toast,
 );
+const closed_picker = setup_closed_picker(
+    () => palette_mode === "closed" && current_view === "commands",
+    () => {
+        void refresh();
+    },
+    show_toast,
+);
 // A separate manager window is itself a tab; keep it out of its own picker.
 void browser.tabs
     ?.getCurrent?.()
@@ -122,6 +130,7 @@ function set_palette_mode(mode: string) {
     search.value = "";
     set_view("commands");
     render_commands();
+    if (mode === "closed") void closed_picker.load();
 }
 
 function preferred_tab(tabs: ManagedTab[]) {
@@ -279,7 +288,9 @@ function set_view(view: string) {
     $("#manager-title").textContent = home
         ? palette_mode === "tabs"
             ? "Open tabs"
-            : "Keeping Tabs"
+            : palette_mode === "closed"
+              ? "Recently closed"
+              : "Keeping Tabs"
         : "Keeping Tabs / "
           + (view === "duplicates"
               ? "Duplicate tabs"
@@ -298,25 +309,35 @@ function set_view(view: string) {
 
 function render_commands() {
     const picking = palette_mode === "tabs";
-    $("#manager").classList.toggle("tab-picker-mode", picking);
+    const closed = palette_mode === "closed";
+    $("#manager").classList.toggle("tab-picker-mode", picking || closed);
+    $("#closed-preview").classList.add("hidden");
     $("#picker-filters").classList.toggle("hidden", !picking);
-    $("#toggle-picker").textContent = picking ? "Commands" : "Tabs";
-    $("#toggle-picker").title = picking
+    $("#toggle-picker").textContent = picking || closed ? "Commands" : "Tabs";
+    $("#toggle-picker").title = picking || closed
         ? "Open commands"
         : "Search open tabs (Alt+K)";
-    $("#command-prompt").textContent = picking ? "⌕" : ">";
-    search.placeholder = picking
-        ? "Search tabs by title or URL…"
-        : "Type a command…";
+    $("#command-prompt").textContent = picking || closed ? "⌕" : ">";
+    search.placeholder = closed
+        ? "Search closed tabs and windows…"
+        : picking
+          ? "Search tabs by title or URL…"
+          : "Type a command…";
     search.setAttribute(
         "aria-label",
-        picking ? "Search open tabs" : "Search commands",
+        closed ? "Search recently closed"
+            : picking ? "Search open tabs" : "Search commands",
     );
     $("#command-list").setAttribute(
         "aria-label",
-        picking ? "Open tabs" : "Commands",
+        closed ? "Recently closed" : picking ? "Open tabs" : "Commands",
     );
-    $("#enter-hint").textContent = picking ? "to switch" : "to run";
+    $("#enter-hint").textContent = closed
+        ? "to restore" : picking ? "to switch" : "to run";
+    if (closed) {
+        closed_picker.render();
+        return;
+    }
     if (picking) {
         tab_picker.render();
         return;
@@ -368,8 +389,8 @@ async function run_command(id: CommandId) {
     ) {
         return;
     }
-    if (id === "tabs") {
-        set_palette_mode("tabs");
+    if (id === "tabs" || id === "closed") {
+        set_palette_mode(id);
         return;
     }
     if (id === "duplicates" || id === "unload" || id === "settings") {
@@ -403,23 +424,28 @@ async function run_command(id: CommandId) {
 }
 
 $("#toggle-picker").addEventListener("click", () => {
-    set_palette_mode(palette_mode === "tabs" ? "commands" : "tabs");
+    set_palette_mode(palette_mode === "commands" ? "tabs" : "commands");
+});
+$("#open-closed").addEventListener("click", () => {
+    set_palette_mode("closed");
 });
 $("#open-settings").addEventListener("click", () => set_view("settings"));
 $("#back").addEventListener("click", () => set_view("commands"));
 search.addEventListener("input", () => {
     active_command = 0;
-    if (palette_mode === "tabs") tab_picker.render(true);
+    if (palette_mode === "closed") closed_picker.render(true);
+    else if (palette_mode === "tabs") tab_picker.render(true);
     else render_commands();
 });
 search.addEventListener("keydown", (event) => {
-    if (palette_mode === "tabs") {
+    if (palette_mode === "tabs" || palette_mode === "closed") {
+        const picker = palette_mode === "closed" ? closed_picker : tab_picker;
         if (event.key === "ArrowDown" || event.key === "ArrowUp") {
             event.preventDefault();
-            tab_picker.move(event.key === "ArrowDown" ? 1 : -1);
+            picker.move(event.key === "ArrowDown" ? 1 : -1);
         } else if (event.key === "Enter") {
             event.preventDefault();
-            void tab_picker.activate();
+            void picker.activate();
         }
         return;
     }
@@ -444,6 +470,11 @@ search.addEventListener("keydown", (event) => {
 });
 $("#command-list").addEventListener("click", (event) => {
     if (!(event.target instanceof Element)) return;
+    if (palette_mode === "closed") {
+        const row = event.target.closest<HTMLElement>("[data-closed-index]");
+        if (row) void closed_picker.activate(Number(row.dataset.closedIndex));
+        return;
+    }
     if (palette_mode === "tabs") {
         const row = event.target.closest<HTMLElement>("[data-tab-id]");
         if (row) void tab_picker.activate(Number(row.dataset.tabId));
@@ -548,7 +579,7 @@ $<HTMLButtonElement>("#review-close").addEventListener("click", () => {
     const tab_label = `tab${chosen.length === 1 ? "" : "s"}`;
     $("#confirm-message").textContent =
         `You’re about to close ${chosen.length} ${tab_label}. `
-        + "This cannot be undone by the extension.";
+        + "You can restore available items from Recently closed.";
     $("#confirm-preview").innerHTML = chosen
         .map(
             (tab) =>
@@ -624,6 +655,7 @@ for (const selector of [
     "#command-list",
     "#confirm-form",
     "#confirm-preview",
+    "#closed-preview-tabs",
 ]) {
     setup_scrollbar($(selector));
 }
@@ -727,6 +759,10 @@ for (const event of [
 ]) {
     event?.addListener(update_picker_tabs);
 }
+
+browser.sessions?.onChanged.addListener(() => {
+    if (palette_mode === "closed") void closed_picker.load();
+});
 
 setup_manager_size();
 set_view("commands");

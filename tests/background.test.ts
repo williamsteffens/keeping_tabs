@@ -52,6 +52,16 @@ test(
                     onActivated: event(),
                     onUpdated: event(),
                 },
+                sessions: {
+                    getRecentlyClosed: async () => [
+                        { tab: { sessionId: "closed-tab" } },
+                        { window: { sessionId: "closed-window" } },
+                    ],
+                    restore: async (id: string) => {
+                        if (id === "expired") throw new Error("Expired");
+                        actions.push(["restore", id]);
+                    },
+                },
                 windows: {
                     getLastFocused: async () => ({
                         left: 0,
@@ -153,6 +163,38 @@ test(
             /Tab closed/,
         );
         assert.deepEqual(actions, []);
+
+        assert.deepEqual(
+            await on_message.listener({ action: "getRecentlyClosed" }),
+            { sessions: [
+                { tab: { sessionId: "closed-tab" } },
+                { window: { sessionId: "closed-window" } },
+            ] },
+        );
+        for (const sessionId of ["closed-tab", "closed-window"]) {
+            assert.deepEqual(
+                await on_message.listener({
+                    action: "restoreSession",
+                    sessionId,
+                }),
+                { restored: true },
+            );
+        }
+        assert.deepEqual(actions, [
+            ["restore", "closed-tab"],
+            ["restore", "closed-window"],
+        ]);
+        await assert.rejects(
+            on_message.listener({
+                action: "restoreSession",
+                sessionId: "expired",
+            }),
+            /Expired/,
+        );
+        assert.equal(await on_message.listener({
+            action: "restoreSession",
+            sessionId: "",
+        }), undefined);
 
         // Firefox 115–125 does not supply the second onCommand argument.
         display = "window";

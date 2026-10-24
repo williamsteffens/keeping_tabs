@@ -112,3 +112,17 @@ watch builds transpile TypeScript; run the type check separately during edits.
 - `src/options/settings.ts`: settings view rendering and save handling.
 - `tests/`: duplicate matching, escaping, and message validation checks.
 - `dist/`: generated extension ready to load in Firefox (ignored by Git).
+
+## Recently closed tabs and windows
+
+Click **Closed** in the manager header, or run **Recently closed tabs and
+windows** from the command list. Tabs and whole windows appear together,
+newest first. Search matches tab titles and URLs, including tabs inside closed
+windows. Use arrow keys and Enter, or click an item, to restore it. Restoring a
+window reopens all its tabs. Select a window and click **Preview selected
+window** to inspect its tabs first.
+
+This view uses Firefox's recently closed sessions and requires the `sessions`
+permission. Firefox controls which items remain available and how many are
+retained; this is not a permanent archive. The list updates when Firefox's
+recently closed sessions change.

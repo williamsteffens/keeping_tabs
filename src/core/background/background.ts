@@ -183,6 +183,17 @@ browser.runtime.onMessage.addListener(async (message: unknown) => {
         return undefined;
     }
 
+    if (message.action === "getRecentlyClosed") {
+        const sessions = await browser.sessions.getRecentlyClosed();
+        return { sessions };
+    }
+
+    if (message.action === "restoreSession") {
+        await browser.sessions.restore(message.sessionId);
+        await update_badge();
+        return { restored: true };
+    }
+
     if (message.action === "unloadAll") {
         const tabs = await query_tabs();
         const discarded = await discard_tabs(tabs);

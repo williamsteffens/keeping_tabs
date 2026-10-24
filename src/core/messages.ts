@@ -4,6 +4,14 @@ import type {
 } from "./types.ts";
 
 interface MessageMap {
+    getRecentlyClosed: {
+        request: { action: "getRecentlyClosed" };
+        response: { sessions: browser.sessions.Session[] };
+    };
+    restoreSession: {
+        request: { action: "restoreSession"; sessionId: string };
+        response: { restored: boolean };
+    };
     activateTab: {
         request: { action: "activateTab"; tabId: number };
         response: { activated: boolean };
@@ -39,6 +47,14 @@ export function is_manager_message(value: unknown): value is ManagerMessage {
     }
 
     switch (value.action) {
+        case "getRecentlyClosed":
+            return true;
+        case "restoreSession":
+            return (
+                "sessionId" in value
+                && typeof value.sessionId === "string"
+                && value.sessionId.trim().length > 0
+            );
         case "getState":
         case "unloadAll":
             return true;

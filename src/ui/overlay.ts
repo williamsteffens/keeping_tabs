@@ -110,6 +110,7 @@ export async function toggle_manager_overlay(manager_url: string) {
                 && [
                     "commands",
                     "tabs",
+                    "closed",
                 ].includes(event.data.mode)
             ) {
                 host.dataset.mode = event.data.mode;

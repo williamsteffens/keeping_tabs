@@ -1,5 +1,13 @@
 export const COMMANDS = [
     {
+        id: "closed",
+        title: "Recently closed tabs and windows",
+        description: "Search and restore closed tabs or entire windows",
+        keywords: "history undo reopen recover sessions",
+        icon: "↶",
+        detail: "Browse…",
+    },
+    {
         id: "tabs",
         title: "Search open tabs",
         description: "Switch tabs, filter by activity, or group by window",

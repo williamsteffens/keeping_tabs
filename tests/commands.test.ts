@@ -54,8 +54,8 @@ test(
 test(
     "empty searches show all commands and unknown searches show none",
     () => {
-        assert.equal(matching_commands(" ").length, 6);
-        assert.equal(matching_commands(">").length, 6);
+        assert.equal(matching_commands(" ").length, 7);
+        assert.equal(matching_commands(">").length, 7);
         assert.deepEqual(matching_commands("no such command"), []);
     },
 );

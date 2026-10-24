@@ -29,6 +29,13 @@
                     >Tabs</button
                 >
                 <button
+                    id="open-closed"
+                    class="button quiet"
+                    type="button"
+                    title="Recently closed tabs and windows"
+                    >Closed</button
+                >
+                <button
                     id="open-settings"
                     class="button quiet icon-button"
                     type="button"
@@ -139,6 +146,16 @@
                 ></div>
                 <div id="command-empty" class="empty hidden" role="status">
                     No matching commands. Try “unload” or “duplicates”.
+                </div>
+                <div id="closed-preview" class="hidden">
+                    <button
+                        id="toggle-closed-preview"
+                        class="button quiet"
+                        type="button"
+                        aria-expanded="false"
+                        aria-controls="closed-preview-tabs"
+                    >Preview selected window</button>
+                    <div id="closed-preview-tabs" class="hidden"></div>
                 </div>
                 <footer id="command-help" class="palette-footer">
                     <a

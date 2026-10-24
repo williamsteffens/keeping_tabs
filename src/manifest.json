@@ -5,6 +5,7 @@
     "description": "Review duplicates, close copies, and unload inactive tabs.",
     "permissions": [
         "tabs",
+        "sessions",
         "alarms",
         "storage",
         "activeTab",
